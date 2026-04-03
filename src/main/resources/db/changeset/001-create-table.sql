@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset admin:create-users-sequence
+--changeset admin:create-users-sequence-1
 CREATE SEQUENCE users_id_seq START WITH 1 INCREMENT BY 50;
 
 --changeset admin:create-users-2
@@ -63,7 +63,7 @@ CREATE SEQUENCE tariffs_id_seq START WITH 1 INCREMENT BY 50;
 CREATE TABLE tariffs(
     id BIGINT PRIMARY KEY DEFAULT nextval('tariffs_id_seq'),
     name VARCHAR(20) NOT NULL UNIQUE,
-    comments VARCHAR(255),
+    description VARCHAR(255),
     price DECIMAL(10, 2) NOT NULL DEFAULT 0.0
 );
 
@@ -85,5 +85,5 @@ CREATE TABLE rentals(
     end_lat DECIMAL(10,8),
     end_lon DECIMAL(10,8),
     price DECIMAL(10,2),
-    status VARCHAR(40) NOT NULL
+    is_active BOOLEAN NOT NULL
 );

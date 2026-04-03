@@ -26,4 +26,3 @@ logging:
   level:
     root: info
     org.example.Senla-task: info
-
