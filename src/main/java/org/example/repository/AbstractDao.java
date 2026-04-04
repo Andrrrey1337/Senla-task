@@ -40,8 +40,6 @@ public abstract class AbstractDao<T, ID> {
 
     public void deleteById(ID id) {
         Optional<T> optional = findById(id);
-        if (optional.isPresent()) {
-            entityManager.remove(optional.get());
-        }
+        optional.ifPresent(entityManager::remove);
     }
 }

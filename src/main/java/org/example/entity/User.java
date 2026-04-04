@@ -30,7 +30,7 @@ public class User {
 
     @Column(name = "is_active")
     @Builder.Default
-    private boolean isActive = true;
+    private Boolean isActive = true;
 
     @Column(name = "balance", precision = 10, scale = 2)
     @Builder.Default
