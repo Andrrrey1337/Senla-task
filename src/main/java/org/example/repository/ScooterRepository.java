@@ -20,10 +20,6 @@ public class ScooterRepository extends AbstractDao<Scooter, Long> {
                 .findFirst();
     }
 
-    public List<Scooter> findAvailableByRentalPoint(Long rentalPointId) {
-        return findAvailableByRentalPoint(rentalPointId, 0);
-    }
-
     public List<Scooter> findAvailableByRentalPoint(Long rentalPointId, Integer batteryLevel) {
 
         return entityManager.createQuery(

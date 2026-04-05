@@ -43,3 +43,4 @@ public abstract class AbstractDao<T, ID> {
         optional.ifPresent(entityManager::remove);
     }
 }
+
