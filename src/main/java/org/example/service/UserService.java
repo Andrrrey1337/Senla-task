@@ -2,9 +2,11 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.UserUpdateDto;
 import org.example.entity.User;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
+import org.example.mapper.UserMapper;
 import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 @Slf4j
 public class UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public User registerUser(User user)  {
         String username = user.getUsername();
@@ -58,6 +61,22 @@ public class UserService {
 
         user = userRepository.update(user);
         log.info("Баланс пользователя с ID {} успешно пополнен на {}. Текущий баланс: {}", userId, amount, user.getBalance());
+
+        return user;
+    }
+
+    public User updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        User user = findById(userId);
+
+        if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername())
+                && userRepository.findByUsername(userUpdateDto.getUsername()).isPresent()) {
+            throw new BusinessException("Пользователь с таким именем '" + userUpdateDto.getUsername() + "' уже существует");
+        }
+
+        userMapper.updateEntity(userUpdateDto, user);
+        user = userRepository.update(user);
+
+        log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
 
         return user;
     }

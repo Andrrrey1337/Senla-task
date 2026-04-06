@@ -7,6 +7,7 @@ import org.example.entity.Scooter;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterMapper;
+import org.example.repository.RentalPointRepository;
 import org.example.repository.ScooterModelRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
@@ -66,13 +67,16 @@ public class ScooterService {
     }
 
     public void deleteScooterById(Long scooterId) {
+        findScooterById(scooterId);
         scooterRepository.deleteById(scooterId);
         log.info("Самокат с ID {} успешно удален из базы", scooterId);
     }
 
-    public Scooter updateScooter(ScooterUpdateDto scooterDto) {
-        Scooter scooter = findScooterById(scooterDto.getId());
+    public Scooter updateScooter(Long id, ScooterUpdateDto scooterDto) {
+        Scooter scooter = findScooterById(id);
+
         scooterMapper.updateEntity(scooterDto, scooter);
+
         scooter = scooterRepository.update(scooter);
 
         log.info("Данные самоката с ID {} успешно обновлены", scooter.getId());
