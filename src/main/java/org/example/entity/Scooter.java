@@ -42,4 +42,8 @@ public class Scooter {
     @Column(name = "status", nullable = false, length = 40)
     @Enumerated(EnumType.STRING)
     private ScooterStatus scooterStatus;
+
+    @Column(name = "mileage", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal mileage = BigDecimal.ZERO;
 }

@@ -105,18 +105,16 @@ public class RentalPointService {
     @Transactional(readOnly = true)
     public RentalPointDataDto getRentalPointDataById(Long rentalPointId) {
         RentalPoint rentalPoint = findRentalPointById(rentalPointId);
-        List<Scooter> scooters = findAllScootersAtRentalPoint(rentalPointId);
-
-        long availableCount = scooters.stream()
+        List<Scooter> scooters = findAllScootersAtRentalPoint(rentalPointId); // все самокаты на точке
+        List<Scooter> availableScooters = scooters.stream() // только доступные самока на точке
                 .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
-                .count();
+                .toList();
 
         long rentedCount = scooters.stream()
                 .filter(s -> s.getScooterStatus() == ScooterStatus.RENTED)
                 .count();
 
-        Map<String, Long> availableModels = scooters.stream()
-                .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
+        Map<String, Long> availableModels = availableScooters.stream()
                 .collect(Collectors.groupingBy(
                         scooter -> scooter.getScooterModel().getName(), // ключ
                         Collectors.counting() // значение
@@ -126,9 +124,10 @@ public class RentalPointService {
                 .rentalPointId(rentalPointId)
                 .rentalPointName(rentalPoint.getName())
                 .totalScooters(scooters.size())
-                .availableScooters(availableCount)
+                .availableScooters(availableScooters.size())
                 .rentedScooters(rentedCount)
                 .availableModelsSummary(availableModels)
+                .availableScootersList(availableScooters)
                 .build();
 
         log.info("Успешно сгенерирована сводка для точки ID={}", rentalPointId);

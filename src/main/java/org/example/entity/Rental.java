@@ -55,4 +55,11 @@ public class Rental {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @Column(name = "distance", precision = 10, scale = 2)
+    private BigDecimal distance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "promo_code_id")
+    private PromoCode promoCode;
 }

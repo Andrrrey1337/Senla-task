@@ -1,3 +1,7 @@
 databaseChangeLog:
   - include:
       file: db/changeset/001-create-table.sql
+  - include:
+      file: db/changeset/002-change-fields.sql
+  - include:
+      file: db/changeset/003-create-subscriptions-promocodes.sql
