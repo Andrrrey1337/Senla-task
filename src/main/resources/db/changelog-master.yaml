@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changeset/002-change-fields.sql
   - include:
       file: db/changeset/003-create-subscriptions-promocodes.sql
+  - include:
+      file: db/changeset/004-add-unique-to-scooter-models.sql

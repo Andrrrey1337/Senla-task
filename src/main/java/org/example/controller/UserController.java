@@ -52,7 +52,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<UserResponseDto> updateAdminFields(@PathVariable Long id, @RequestParam UserAdminUpdateDto  userAdminUpdateDto) {
+    public ResponseEntity<UserResponseDto> updateAdminFields(@PathVariable Long id, @RequestBody UserAdminUpdateDto  userAdminUpdateDto) {
         User user = userService.updateAdminFields(id,userAdminUpdateDto);
         return ResponseEntity.ok(userMapper.toDto(user));
     }

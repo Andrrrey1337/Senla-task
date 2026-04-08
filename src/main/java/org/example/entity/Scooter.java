@@ -41,7 +41,8 @@ public class Scooter {
 
     @Column(name = "status", nullable = false, length = 40)
     @Enumerated(EnumType.STRING)
-    private ScooterStatus scooterStatus;
+    @Builder.Default
+    private ScooterStatus scooterStatus = ScooterStatus.UNAVAILABLE;
 
     @Column(name = "mileage", precision = 10, scale = 2)
     @Builder.Default

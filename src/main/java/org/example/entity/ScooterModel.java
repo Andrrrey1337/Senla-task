@@ -19,8 +19,8 @@ public class ScooterModel {
     @SequenceGenerator(name = "scooter_models_seq", sequenceName = "scooter_models_id_seq", allocationSize = 50)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 50)
-    private String  name;
+    @Column(name = "name", nullable = false, length = 50, unique = true)
+    private String name;
 
     @Column(name = "price_per_minute", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerMinute;

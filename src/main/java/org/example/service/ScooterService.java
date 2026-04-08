@@ -29,10 +29,6 @@ public class ScooterService {
             throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
         }
 
-        Long modelId = scooter.getScooterModel().getId();
-        scooterModelRepository.findById(modelId)
-                .orElseThrow(() -> new ResourceNotFoundException("Модель самоката не найдена: " + modelId));
-
         Scooter savedScooter = scooterRepository.create(scooter);
 
         log.info("Успешно зарегистрирован новый самокат: SN={}, ID={}", serialNumber, savedScooter.getId());

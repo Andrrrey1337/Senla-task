@@ -1,5 +1,5 @@
 package org.example.entity;
 
 public enum ScooterStatus {
-    AVAILABLE, RENTED
+    AVAILABLE, RENTED, UNAVAILABLE
 }

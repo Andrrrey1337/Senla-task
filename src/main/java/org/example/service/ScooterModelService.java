@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.scooterModel.ScooterModelUpdateDto;
 import org.example.entity.ScooterModel;
+import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterModelMapper;
 import org.example.repository.ScooterModelRepository;
@@ -21,6 +22,10 @@ public class ScooterModelService {
     private final ScooterModelMapper scooterModelMapper;
 
     public ScooterModel createScooterModel(ScooterModel scooterModel) {
+        if (scooterModelRepository.findByName(scooterModel.getName()).isPresent()) {
+            throw new BusinessException("Модель самоката с названием '" + scooterModel.getName() + "' уже существует");
+        }
+
         ScooterModel scooterModelNew = scooterModelRepository.create(scooterModel);
 
         log.info("Успешно добавлена новая модель самоката: ID={}, название='{}'",
@@ -50,6 +55,12 @@ public class ScooterModelService {
 
     public ScooterModel updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = findScooterModelById(id);
+
+        if (scooterModelUpdateDto.getName() != null && !scooterModelUpdateDto.getName().equals(scooterModel.getName())
+                && scooterModelRepository.findByName(scooterModelUpdateDto.getName()).isPresent()) {
+            throw new BusinessException("Модель самоката с названием '" + scooterModelUpdateDto.getName() + "' уже существует");
+        }
+
         scooterModelMapper.updateEntity(scooterModelUpdateDto, scooterModel);
 
         log.info("Данные модели самоката с ID {} успешно обновлены", scooterModel.getId());
