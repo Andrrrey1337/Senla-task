@@ -2,12 +2,10 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.ScooterModelUpdateDto;
-import org.example.dto.ScooterUpdateDto;
+import org.example.dto.scooterModel.ScooterModelUpdateDto;
 import org.example.entity.ScooterModel;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterModelMapper;
-import org.example.mapper.TariffMapper;
 import org.example.repository.ScooterModelRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,11 +52,9 @@ public class ScooterModelService {
         ScooterModel scooterModel = findScooterModelById(id);
         scooterModelMapper.updateEntity(scooterModelUpdateDto, scooterModel);
 
-        ScooterModel scooterModelNew = scooterModelRepository.update(scooterModel);
+        log.info("Данные модели самоката с ID {} успешно обновлены", scooterModel.getId());
 
-        log.info("Данные модели самоката с ID {} успешно обновлены", scooterModelNew.getId());
-
-        return scooterModelNew;
+        return scooterModel;
     }
 
     public void deleteScooterModelById(Long id) {

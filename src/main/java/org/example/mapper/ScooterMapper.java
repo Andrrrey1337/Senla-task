@@ -1,6 +1,6 @@
 package org.example.mapper;
 
-import org.example.dto.ScooterUpdateDto;
+import org.example.dto.scooter.ScooterUpdateDto;
 import org.example.entity.Scooter;
 import org.example.service.RentalPointService;
 import org.mapstruct.Mapper;

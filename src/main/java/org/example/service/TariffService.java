@@ -2,7 +2,7 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.TariffUpdateDto;
+import org.example.dto.tariff.TariffUpdateDto;
 import org.example.entity.Tariff;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -68,7 +68,6 @@ public class TariffService {
         }
 
         tariffMapper.updateEntity(tariffDto, existTariff);
-        existTariff = tariffRepository.update(existTariff);
         log.info("Данные тарифа с ID {} успешно обновлены", existTariff.getId());
 
         return existTariff;

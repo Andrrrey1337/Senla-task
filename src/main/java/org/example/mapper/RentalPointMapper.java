@@ -1,6 +1,6 @@
 package org.example.mapper;
 
-import org.example.dto.RentalPointUpdateDto;
+import org.example.dto.point.RentalPointUpdateDto;
 import org.example.entity.RentalPoint;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

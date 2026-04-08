@@ -2,7 +2,9 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.UserUpdateDto;
+import org.example.dto.user.UserAdminUpdateDto;
+import org.example.dto.user.UserUpdateDto;
+import org.example.entity.Role;
 import org.example.entity.User;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -27,6 +29,8 @@ public class UserService {
             throw new BusinessException("Пользователь с именем " + username + "' уже существует");
         }
 
+        user.setRole(Role.USER);
+
         user = userRepository.create(user);
         log.info("Успешно зарегистрирован новый пользователь: ID={}, username={}", user.getId(), username);
 
@@ -36,7 +40,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public User findByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с именем " + username + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с именем '" + username + " не найден"));
 
         log.info("Успешно выполнен поиск пользователя по username: {}", username);
 
@@ -59,7 +63,6 @@ public class UserService {
         User user = findById(userId);
         user.setBalance(user.getBalance().add(amount));
 
-        user = userRepository.update(user);
         log.info("Баланс пользователя с ID {} успешно пополнен на {}. Текущий баланс: {}", userId, amount, user.getBalance());
 
         return user;
@@ -74,9 +77,19 @@ public class UserService {
         }
 
         userMapper.updateEntity(userUpdateDto, user);
-        user = userRepository.update(user);
 
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
+
+        return user;
+    }
+
+    public User updateAdminFields(Long userId, UserAdminUpdateDto dto) {
+        User user = findById(userId);
+
+        userMapper.updateEntity(dto, user);
+
+        log.info("Изменены права/статус пользователя с ID={}. Новая роль: {}, Активен: {}",
+                user.getId(), user.getRole(), user.getIsActive());
 
         return user;
     }

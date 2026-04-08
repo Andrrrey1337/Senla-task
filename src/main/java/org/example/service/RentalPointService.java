@@ -2,8 +2,8 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.RentalPointDataDto;
-import org.example.dto.RentalPointUpdateDto;
+import org.example.dto.point.RentalPointDataDto;
+import org.example.dto.point.RentalPointUpdateDto;
 import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
 import org.example.entity.ScooterStatus;
@@ -11,7 +11,6 @@ import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalPointMapper;
 import org.example.repository.RentalPointRepository;
-import org.example.repository.ScooterModelRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,11 +77,9 @@ public class RentalPointService {
             rentalPoint.setParent(parentPoint);
         }
 
-        RentalPoint updatedPoint = rentalPointRepository.update(rentalPoint);
+        log.info("Данные точки проката с ID {} успешно обновлены", rentalPoint.getId());
 
-        log.info("Данные точки проката с ID {} успешно обновлены", updatedPoint.getId());
-
-        return updatedPoint;
+        return rentalPoint;
     }
 
     public void deleteById(Long id) {

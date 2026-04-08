@@ -2,8 +2,8 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.FinishRentalDto;
-import org.example.dto.StartRentalDto;
+import org.example.dto.rental.FinishRentalDto;
+import org.example.dto.rental.StartRentalDto;
 import org.example.entity.*;
 
 import org.example.exception.BusinessException;
@@ -63,9 +63,7 @@ public class RentalService {
             }
         }
 
-
         scooter.setScooterStatus(ScooterStatus.RENTED);
-        scooterRepository.update(scooter);
 
         Rental rental = Rental.builder()
                 .user(user)
@@ -126,10 +124,8 @@ public class RentalService {
                 } else { // если оставшихся в абонементе минут не хватает на всю поездку
                     durationMinutes = BigDecimal.valueOf(tripMin - availableMinutes);
                     userSubscription.setRemainingMinutes(0);
-                    userSubscription.setIsActive(false);
                 }
-            } else userSubscription.setIsActive(false);
-            userSubscriptionRepository.update(userSubscription);
+            }
         }
 
         BigDecimal totalPrice = pricePerMinute.multiply(durationMinutes).add(tariffPrice);
@@ -137,7 +133,8 @@ public class RentalService {
         // расчет промиков
         if (rental.getPromoCode() != null) {
             int discount = rental.getPromoCode().getDiscount();
-            BigDecimal discountPrice = totalPrice.multiply(new BigDecimal(discount/(double) 100));
+            BigDecimal discountMultiplier = BigDecimal.valueOf(discount).divide(BigDecimal.valueOf(100));
+            BigDecimal discountPrice = totalPrice.multiply(discountMultiplier);
             totalPrice = totalPrice.subtract(discountPrice);
         }
 
@@ -146,13 +143,10 @@ public class RentalService {
         // считаем расстояние
         BigDecimal mileage = getDistance(rental.getStartLatitude(), rental.getStartLongitude(), rental.getEndLatitude(), rental.getEndLongitude());
         rental.setDistance(mileage);
-        rental =  rentalRepository.update(rental);
 
         // обновляем баланс
         User user = rental.getUser();
         user.setBalance(user.getBalance().subtract(totalPrice));
-        user = userRepository.update(user);
-
 
         // обновляем данные самоката
         Scooter scooter = rental.getScooter();
@@ -164,10 +158,7 @@ public class RentalService {
             scooter.setMileage(BigDecimal.ZERO);
         }
 
-
         scooter.setMileage(scooter.getMileage().add(mileage));
-
-        scooterRepository.update(scooter);
 
         log.info("Поездка ID={} успешно завершена. Списано: {}. Длительность: {} мин. Дистанция: {} км",
                 rental.getId(), totalPrice, durationMinutes, mileage);

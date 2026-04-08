@@ -1,4 +1,4 @@
-package org.example.dto;
+package org.example.dto.user;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +9,4 @@ import org.example.entity.Role;
 public class UserUpdateDto {
     private String username;
     private String password;
-    private Role role;
-    private Boolean isActive;
-
 }

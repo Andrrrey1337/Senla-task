@@ -1,4 +1,4 @@
-package org.example.dto;
+package org.example.dto.rental;
 
 import lombok.Getter;
 import lombok.Setter;
