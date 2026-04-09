@@ -1,6 +1,7 @@
 package org.example.dto.scooter;
 
 import lombok.*;
+import org.example.entity.ScooterStatus;
 
 import java.math.BigDecimal;
 
@@ -9,7 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ScooterResponseDto {
+public class ScooterAdminResponseDto {
     private Long id;
     private String serialNumber;
     private Long modelId;
@@ -18,4 +19,6 @@ public class ScooterResponseDto {
     private Integer batteryLevel;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private ScooterStatus scooterStatus;
+    private BigDecimal mileage;
 }

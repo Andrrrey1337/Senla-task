@@ -58,7 +58,7 @@ public class RentalService {
             promoCode = promoCodeRepository.findByCode(rentalDto.getPromoCode())
                     .orElseThrow(() -> new ResourceNotFoundException("Промокод '" + rentalDto.getPromoCode() + "' не найден"));
 
-            if (!promoCode.getIsActive() || (promoCode.getEndDate() != null && promoCode.getEndDate().isAfter(LocalDateTime.now()))) {
+            if (!promoCode.getIsActive() || (promoCode.getEndDate() != null && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
                 throw new BusinessException("Промокод недействителен или истек");
             }
         }

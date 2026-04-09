@@ -2,11 +2,13 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterUpdateDto;
 import org.example.entity.Scooter;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterMapper;
+import org.example.repository.RentalPointRepository;
 import org.example.repository.ScooterModelRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
@@ -20,16 +22,23 @@ import java.util.List;
 @Slf4j
 public class ScooterService {
     private final ScooterRepository scooterRepository;
-    private final ScooterModelRepository scooterModelRepository;
     private final ScooterMapper scooterMapper;
+    private final RentalPointRepository rentalPointRepository;
 
-    public Scooter createScooter(Scooter scooter) {
+    public Scooter createScooter(ScooterCreateDto scooter) {
         String serialNumber = scooter.getSerialNumber();
         if (scooterRepository.findBySerialNumber(serialNumber).isPresent()) {
             throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
         }
 
-        Scooter savedScooter = scooterRepository.create(scooter);
+        Scooter newScooter = scooterMapper.toEntity(scooter);
+
+        if (scooter.getRentalPointId() != null) {
+            newScooter.setRentalPoint(rentalPointRepository.findById(scooter.getRentalPointId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Точка проката не найдена")));
+        }
+
+        Scooter savedScooter = scooterRepository.create(newScooter);
 
         log.info("Успешно зарегистрирован новый самокат: SN={}, ID={}", serialNumber, savedScooter.getId());
         return savedScooter;

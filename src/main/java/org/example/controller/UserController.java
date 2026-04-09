@@ -28,13 +28,13 @@ public class UserController {
     }
 
     @GetMapping("/username/{username}")
-    public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) { // админам или самому себе
         User user = userService.findByUsername(username);
         return ResponseEntity.ok(userMapper.toDto(user));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) { // админам или самому себе
         User user = userService.findById(id);
         return ResponseEntity.ok(userMapper.toDto(user));
     }

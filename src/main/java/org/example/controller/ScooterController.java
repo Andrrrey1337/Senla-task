@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterResponseDto;
 import org.example.dto.scooter.ScooterUpdateDto;
@@ -21,25 +22,25 @@ public class ScooterController {
     private final ScooterMapper scooterMapper;
 
     @PostMapping
-    public ResponseEntity<ScooterResponseDto> createScooter(@RequestBody ScooterCreateDto scooterCreateDto) {
-        Scooter scooter = scooterService.createScooter(scooterMapper.toEntity(scooterCreateDto));
-        return new  ResponseEntity<>(scooterMapper.toDto(scooter), HttpStatus.CREATED);
+    public ResponseEntity<ScooterAdminResponseDto> createScooter(@RequestBody ScooterCreateDto scooterCreateDto) {
+        Scooter scooter = scooterService.createScooter(scooterCreateDto);
+        return new  ResponseEntity<>(scooterMapper.toAdminDto(scooter), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ScooterResponseDto> getScooterById(@PathVariable Long id) {
+    public ResponseEntity<ScooterAdminResponseDto> getScooterById(@PathVariable Long id) {
         Scooter scooter= scooterService.findScooterById(id);
-        return ResponseEntity.ok(scooterMapper.toDto(scooter));
+        return ResponseEntity.ok(scooterMapper.toAdminDto(scooter));
     }
 
     @GetMapping("/number/{number}")
-    public ResponseEntity<ScooterResponseDto> getScooterByNumber(@PathVariable String number) {
+    public ResponseEntity<ScooterResponseDto> getScooterByNumber(@PathVariable String number) { // всем
         Scooter scooter = scooterService.findScooterBySerialNumber(number);
         return ResponseEntity.ok(scooterMapper.toDto(scooter));
     }
 
     @GetMapping("/available")
-    public ResponseEntity<List<ScooterResponseDto>> getAvailableScooters(
+    public ResponseEntity<List<ScooterResponseDto>> getAvailableScooters( // всем
             @RequestParam("pointId") Long id,
             @RequestParam(value = "minBattery", defaultValue = "20") Integer minBatteryLevel) {
         List<Scooter> scooters = scooterService.findAvailableScooters(id, minBatteryLevel);
@@ -53,8 +54,8 @@ public class ScooterController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ScooterResponseDto> updateScooter(@PathVariable Long id, @RequestBody ScooterUpdateDto scooterUpdateDto) {
+    public ResponseEntity<ScooterAdminResponseDto> updateScooter(@PathVariable Long id, @RequestBody ScooterUpdateDto scooterUpdateDto) {
         Scooter scooter = scooterService.updateScooter(id,  scooterUpdateDto);
-        return ResponseEntity.ok(scooterMapper.toDto(scooter));
+        return ResponseEntity.ok(scooterMapper.toAdminDto(scooter));
     }
 }

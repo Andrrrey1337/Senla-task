@@ -2,6 +2,7 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.entity.RentalPoint;
@@ -10,6 +11,7 @@ import org.example.entity.ScooterStatus;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalPointMapper;
+import org.example.mapper.ScooterMapper;
 import org.example.repository.RentalPointRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
@@ -27,11 +29,18 @@ public class RentalPointService {
     private final RentalPointRepository rentalPointRepository;
     private final ScooterRepository scooterRepository;
     private final RentalPointMapper rentalPointMapper;
+    private final ScooterMapper scooterMapper;
 
-    public RentalPoint createRentalPoint(RentalPoint rentalPoint) {
-        if (rentalPointRepository.findRentalPointByName(rentalPoint.getName()).isPresent()) {
-            throw new BusinessException("Точка проката с названием " +  rentalPoint.getName() + " уже существует");
+    public RentalPoint createRentalPoint(RentalPointCreateDto dto) {
+        if (rentalPointRepository.findRentalPointByName(dto.getName()).isPresent()) {
+            throw new BusinessException("Точка проката с названием " +  dto.getName() + " уже существует");
         }
+        RentalPoint rentalPoint = rentalPointMapper.toEntity(dto);
+
+        if (dto.getParentId() != null) {
+            rentalPoint.setParent(findRentalPointById(dto.getParentId()));
+        }
+
         rentalPoint = rentalPointRepository.create(rentalPoint);
         log.info("Успешно создана новая точка проката: ID={}, название='{}'", rentalPoint.getId(), rentalPoint.getName());
 
@@ -124,7 +133,7 @@ public class RentalPointService {
                 .availableScooters(availableScooters.size())
                 .rentedScooters(rentedCount)
                 .availableModelsSummary(availableModels)
-                .availableScootersList(availableScooters)
+                .availableScootersList(scooterMapper.toAdminDtos(availableScooters))
                 .build();
 
         log.info("Успешно сгенерирована сводка для точки ID={}", rentalPointId);
