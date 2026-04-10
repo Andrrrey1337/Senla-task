@@ -1,6 +1,9 @@
 package org.example.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointResponseDto;
@@ -20,54 +23,63 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/points")
 @RequiredArgsConstructor
+@Tag(name = "Точки проката", description = "Управление точками проката самокатов")
 public class RentalPointController {
     private final RentalPointService rentalPointService;
     private final RentalPointMapper rentalPointMapper;
     private final ScooterMapper scooterMapper;
 
     @PostMapping
-    public ResponseEntity<RentalPointResponseDto> createRentalPoint(@RequestBody RentalPointCreateDto rentalPointCreateDto) {
+    @Operation(summary = "Создать новую точку проката", description = "Доступно только администраторам")
+    public ResponseEntity<RentalPointResponseDto> createRentalPoint(@Valid @RequestBody RentalPointCreateDto rentalPointCreateDto) {
         RentalPoint rentalPoint = rentalPointService.createRentalPoint(rentalPointCreateDto);
         return new ResponseEntity<>(rentalPointMapper.toDto(rentalPoint), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Получить точку проката по ID")
     public ResponseEntity<RentalPointResponseDto> getRentalPointById(@PathVariable Long id) {
         RentalPoint rentalPoint = rentalPointService.findRentalPointById(id);
         return ResponseEntity.ok(rentalPointMapper.toDto(rentalPoint));
     }
 
     @GetMapping("/name/{name}")
+    @Operation(summary = "Получить точку проката по названию")
     public ResponseEntity<RentalPointResponseDto> getRentalPointByName(@PathVariable String name) {
         RentalPoint rentalPoint = rentalPointService.findRentalPointByName(name);
         return ResponseEntity.ok(rentalPointMapper.toDto(rentalPoint));
     }
 
     @GetMapping
+    @Operation(summary = "Получить список всех точек проката")
     public ResponseEntity<List<RentalPointResponseDto>> getAllRentalPoints() {
         List<RentalPoint> rentalPoints = rentalPointService.findAllRentalPoints();
         return ResponseEntity.ok(rentalPointMapper.toDtos(rentalPoints));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<RentalPointResponseDto> updateRentalPoint(@PathVariable Long id, @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
+    @Operation(summary = "Обновить данные точки проката", description = "Частичное обновление полей")
+    public ResponseEntity<RentalPointResponseDto> updateRentalPoint(@PathVariable Long id, @Valid @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
         RentalPoint rentalPoint = rentalPointService.updateRentalPoint(id, rentalPointUpdateDto);
         return ResponseEntity.ok(rentalPointMapper.toDto(rentalPoint));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Удалить точку проката")
     public ResponseEntity<Void> deleteRentalPoint(@PathVariable Long id) {
         rentalPointService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/scooters/{id}")
+    @Operation(summary = "Получить список всех самокатов на точке проката (админ)")
     public ResponseEntity<List<ScooterAdminResponseDto>> getScootersAtPointById(@PathVariable Long id) {
         List<Scooter> scooters = rentalPointService.findAllScootersAtRentalPoint(id);
         return ResponseEntity.ok(scooterMapper.toAdminDtos(scooters));
     }
 
     @GetMapping("/data/{id}")
+    @Operation(summary = "Получить детальную статистику по точке проката", description = "Количество свободных/занятых самокатов, список моделей")
     public ResponseEntity<RentalPointDataDto> getRentalPointDataById(@PathVariable Long id) { // только для админов
         return ResponseEntity.ok(rentalPointService.getRentalPointDataById(id));
     }

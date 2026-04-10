@@ -1,6 +1,9 @@
 package org.example.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.example.dto.rental.FinishRentalDto;
 import org.example.dto.rental.RentalAdminResponseDto;
 import org.example.dto.rental.RentalResponseDto;
@@ -17,29 +20,34 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rentals")
 @RequiredArgsConstructor
+@Tag(name = "Аренда", description = "Управление процессом аренды самокатов")
 public class RentalController {
     private final RentalService rentalService;
     private final RentalMapper rentalMapper;
 
     @PostMapping("/start")
-    public ResponseEntity<RentalResponseDto> startRental(@RequestBody StartRentalDto startRentalDto) {
+    @Operation(summary = "Начать аренду самоката")
+    public ResponseEntity<RentalResponseDto> startRental(@Valid @RequestBody StartRentalDto startRentalDto) {
         Rental rental = rentalService.startRental(startRentalDto);
         return new ResponseEntity<>(rentalMapper.toDto(rental), HttpStatus.CREATED);
     }
 
     @PostMapping("/{id}/finish")
-    public ResponseEntity<RentalResponseDto> finishRental(@PathVariable Long id, @RequestBody FinishRentalDto finishRentalDto) {
+    @Operation(summary = "Завершить аренду самоката", description = "Рассчитывает стоимость и обновляет состояние самоката")
+    public ResponseEntity<RentalResponseDto> finishRental(@PathVariable Long id, @Valid @RequestBody FinishRentalDto finishRentalDto) {
         Rental rental = rentalService.finishRental(id, finishRentalDto);
         return ResponseEntity.ok(rentalMapper.toDto(rental));
     }
 
     @GetMapping("/user/{userId}")
+    @Operation(summary = "Получить историю аренды пользователя")
     public ResponseEntity<List<RentalResponseDto>> getUserRentals(@PathVariable Long userId) {
         List<Rental> rentals = rentalService.findRentalsByUserId(userId);
         return ResponseEntity.ok(rentalMapper.toDtos(rentals));
     }
 
     @GetMapping("/scooter/{scooterId}")
+    @Operation(summary = "Получить историю аренды конкретного самоката (админ)")
     public ResponseEntity<List<RentalAdminResponseDto>> getScooterRentals(@PathVariable Long scooterId) {
         List<Rental> rentals = rentalService.findRentalsByScooterId(scooterId);
         return ResponseEntity.ok(rentalMapper.toAdminDtos(rentals));
