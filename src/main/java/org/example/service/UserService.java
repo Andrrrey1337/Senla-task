@@ -10,6 +10,7 @@ import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.UserMapper;
 import org.example.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public User registerUser(User user)  {
         String username = user.getUsername();
@@ -30,6 +32,7 @@ public class UserService {
         }
 
         user.setRole(Role.USER);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         user = userRepository.create(user);
         log.info("Успешно зарегистрирован новый пользователь: ID={}, username={}", user.getId(), username);
