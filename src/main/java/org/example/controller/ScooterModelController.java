@@ -12,6 +12,7 @@ import org.example.mapper.ScooterModelMapper;
 import org.example.service.ScooterModelService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class ScooterModelController {
     private final ScooterModelMapper scooterModelMapper;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать новую модель самоката")
     public ResponseEntity<ScooterModelResponseDto> createScooterModel(@Valid @RequestBody ScooterModelCreateDto scooterModelCreateDto) {
         ScooterModel scooterModel = scooterModelService.createScooterModel(scooterModelMapper.toEntity(scooterModelCreateDto));
@@ -46,6 +48,7 @@ public class ScooterModelController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить характеристики модели")
     public ResponseEntity<ScooterModelResponseDto> updateScooterModel(@PathVariable Long id, @Valid @RequestBody ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = scooterModelService.updateScooterModel(id, scooterModelUpdateDto);
@@ -53,6 +56,7 @@ public class ScooterModelController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Удалить модель из системы")
     public ResponseEntity<Void> deleteScooterModel(@PathVariable Long id) {
         scooterModelService.deleteScooterModelById(id);

@@ -9,6 +9,8 @@ import org.example.entity.*;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.repository.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +37,7 @@ public class RentalService {
     private static final double EARTH_RADIUS_KM = 6371.0;
 
     public Rental startRental(StartRentalDto rentalDto) {
-        User user = userService.findById(rentalDto.getUserId());
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (rentalRepository.findActiveRentalByUserId(user.getId()).isPresent()) {
             throw new BusinessException("У пользователя уже есть активная поездка");
@@ -88,6 +90,15 @@ public class RentalService {
 
         if (!rental.getIsActive()) {
             throw new BusinessException("Эта поездка уже была завершена ранее");
+        }
+
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        boolean isOwner = rental.getUser().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Вы не можете завершить чужую поездку!");
         }
 
         // обновляем поездку

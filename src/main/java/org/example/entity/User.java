@@ -44,7 +44,7 @@ public class User implements UserDetails {
     // для UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name() + role.name())); // чтобы получалось типа ROLE_USER
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name())); // чтобы получалось типа ROLE_USER
     }
 
     @Override

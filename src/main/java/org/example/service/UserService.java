@@ -81,6 +81,10 @@ public class UserService {
 
         userMapper.updateEntity(userUpdateDto, user);
 
+        if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+        }
+
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
 
         return user;

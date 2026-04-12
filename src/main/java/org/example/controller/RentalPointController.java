@@ -16,6 +16,7 @@ import org.example.mapper.ScooterMapper;
 import org.example.service.RentalPointService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class RentalPointController {
     private final ScooterMapper scooterMapper;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать новую точку проката", description = "Доступно только администраторам")
     public ResponseEntity<RentalPointResponseDto> createRentalPoint(@Valid @RequestBody RentalPointCreateDto rentalPointCreateDto) {
         RentalPoint rentalPoint = rentalPointService.createRentalPoint(rentalPointCreateDto);
@@ -58,6 +60,7 @@ public class RentalPointController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить данные точки проката", description = "Частичное обновление полей")
     public ResponseEntity<RentalPointResponseDto> updateRentalPoint(@PathVariable Long id, @Valid @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
         RentalPoint rentalPoint = rentalPointService.updateRentalPoint(id, rentalPointUpdateDto);
@@ -65,6 +68,7 @@ public class RentalPointController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Удалить точку проката")
     public ResponseEntity<Void> deleteRentalPoint(@PathVariable Long id) {
         rentalPointService.deleteById(id);
@@ -72,6 +76,7 @@ public class RentalPointController {
     }
 
     @GetMapping("/scooters/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить список всех самокатов на точке проката (админ)")
     public ResponseEntity<List<ScooterAdminResponseDto>> getScootersAtPointById(@PathVariable Long id) {
         List<Scooter> scooters = rentalPointService.findAllScootersAtRentalPoint(id);
@@ -79,6 +84,7 @@ public class RentalPointController {
     }
 
     @GetMapping("/data/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить детальную статистику по точке проката", description = "Количество свободных/занятых самокатов, список моделей")
     public ResponseEntity<RentalPointDataDto> getRentalPointDataById(@PathVariable Long id) { // только для админов
         return ResponseEntity.ok(rentalPointService.getRentalPointDataById(id));

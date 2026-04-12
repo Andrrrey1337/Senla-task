@@ -21,7 +21,7 @@ public class JwtService {
     private long jwtExpiration;
 
     // превращаем наш ключ в криптографический ключ
-    public SecretKey getSigningKey() {
+    private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 

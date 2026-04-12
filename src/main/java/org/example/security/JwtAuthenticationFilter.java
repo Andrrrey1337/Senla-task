@@ -31,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
                 return;
             }
+
             String username = jwtService.extractUsername(authorizationHeader.substring(7)); // убираем "Bearer "
 
             // если пользователя нет в контексте (не добавили туда в предыдущих фильтрах)
@@ -38,13 +39,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 // создаем объект авторизации
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                if (userDetails.isEnabled()) { // если пользователь не забанен
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                // добавляем детали (IP адрес, сессию) к нашему токену
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // добавляем детали (IP адрес, сессию) к нашему токену
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+
             }
         } catch (Exception e) {
             log.error("Не удалось установить аутентификацию пользователя в фильтре: {}", e.getMessage());

@@ -13,6 +13,7 @@ import org.example.mapper.RentalMapper;
 import org.example.service.RentalService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,6 +41,7 @@ public class RentalController {
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id") // <-- ДОБАВИТЬ ЭТО
     @Operation(summary = "Получить историю аренды пользователя")
     public ResponseEntity<List<RentalResponseDto>> getUserRentals(@PathVariable Long userId) {
         List<Rental> rentals = rentalService.findRentalsByUserId(userId);
@@ -47,6 +49,7 @@ public class RentalController {
     }
 
     @GetMapping("/scooter/{scooterId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить историю аренды конкретного самоката (админ)")
     public ResponseEntity<List<RentalAdminResponseDto>> getScooterRentals(@PathVariable Long scooterId) {
         List<Rental> rentals = rentalService.findRentalsByScooterId(scooterId);

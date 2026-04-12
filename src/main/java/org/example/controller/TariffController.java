@@ -12,6 +12,7 @@ import org.example.mapper.TariffMapper;
 import org.example.service.TariffService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class TariffController {
     private final TariffMapper tariffMapper;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать новый тариф")
     public ResponseEntity<TariffResponseDto> createTariff(@Valid @RequestBody TariffCreateDto tariffCreateDto) {
         Tariff tariffEntity = tariffService.createTariff(tariffMapper.toEntity(tariffCreateDto));
@@ -53,6 +55,7 @@ public class TariffController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить параметры тарифа")
     public ResponseEntity<TariffResponseDto> updateTariff(@PathVariable Long id, @Valid @RequestBody TariffUpdateDto tariffUpdateDto) {
         Tariff tariff = tariffService.updateTariff(id, tariffUpdateDto);
@@ -60,6 +63,7 @@ public class TariffController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Удалить тариф")
     public ResponseEntity<Void> deleteTariff(@PathVariable Long id) {
         tariffService.deleteTariffById(id);

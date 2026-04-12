@@ -5,6 +5,9 @@ import org.example.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
     private final JwtAuthenticationFilter  jwtAuthenticationFilter;
 
@@ -23,6 +27,11 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
     // главный фильтр
@@ -35,7 +44,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // эндпоинты для всех и даже не зарегистрированных
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll() // регистрация пользователя
+                        .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll() // регистрация и логин
                         .requestMatchers(HttpMethod.GET, "/api/tariffs/**").permitAll() // просмотр тарифов
                         .requestMatchers(HttpMethod.GET, "/api/scooter-models/**").permitAll() // просмотр моделей
                         .requestMatchers(HttpMethod.GET, "/api/points/**").permitAll() // просмотр точек

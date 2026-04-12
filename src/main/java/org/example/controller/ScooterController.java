@@ -13,6 +13,7 @@ import org.example.mapper.ScooterMapper;
 import org.example.service.ScooterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class ScooterController {
     private final ScooterMapper scooterMapper;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Добавить новый самокат", description = "Доступно только администраторам")
     public ResponseEntity<ScooterAdminResponseDto> createScooter(@Valid @RequestBody ScooterCreateDto scooterCreateDto) {
         Scooter scooter = scooterService.createScooter(scooterCreateDto);
@@ -33,6 +35,7 @@ public class ScooterController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить самокат по ID (админ)", description = "Возвращает полную информацию о самокате")
     public ResponseEntity<ScooterAdminResponseDto> getScooterById(@PathVariable Long id) {
         Scooter scooter= scooterService.findScooterById(id);
@@ -56,6 +59,7 @@ public class ScooterController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Удалить самокат из системы")
     public ResponseEntity<Void> deleteScooter(@PathVariable Long id) {
         scooterService.deleteScooterById(id);
@@ -63,6 +67,7 @@ public class ScooterController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить данные самоката (админ)", description = "Изменение статуса, координат, уровня заряда или точки привязки")
     public ResponseEntity<ScooterAdminResponseDto> updateScooter(@PathVariable Long id, @Valid @RequestBody ScooterUpdateDto scooterUpdateDto) {
         Scooter scooter = scooterService.updateScooter(id,  scooterUpdateDto);
