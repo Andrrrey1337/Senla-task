@@ -9,11 +9,13 @@ import org.example.dto.rental.RentalAdminResponseDto;
 import org.example.dto.rental.RentalResponseDto;
 import org.example.dto.rental.StartRentalDto;
 import org.example.entity.Rental;
+import org.example.entity.User;
 import org.example.mapper.RentalMapper;
 import org.example.service.RentalService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,10 +43,18 @@ public class RentalController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id") // <-- ДОБАВИТЬ ЭТО
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить историю аренды пользователя")
     public ResponseEntity<List<RentalResponseDto>> getUserRentals(@PathVariable Long userId) {
         List<Rental> rentals = rentalService.findRentalsByUserId(userId);
+        return ResponseEntity.ok(rentalMapper.toDtos(rentals));
+    }
+
+    @GetMapping("/my")
+    @Operation(summary = "Моя история аренды")
+    public ResponseEntity<List<RentalResponseDto>> getMyRentals() {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Rental> rentals = rentalService.findRentalsByUserId(currentUser.getId());
         return ResponseEntity.ok(rentalMapper.toDtos(rentals));
     }
 
@@ -55,4 +65,6 @@ public class RentalController {
         List<Rental> rentals = rentalService.findRentalsByScooterId(scooterId);
         return ResponseEntity.ok(rentalMapper.toAdminDtos(rentals));
     }
+
+
 }

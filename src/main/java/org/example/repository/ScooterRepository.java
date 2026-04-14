@@ -21,7 +21,7 @@ public class ScooterRepository extends AbstractDao<Scooter, Long> {
     }
 
     public List<Scooter> findAllByRentalPoint(Long rentalPointId) {
-        return entityManager.createQuery("SELECT s FROM Scooter s WHERE s.rentalPoint.id = :rentalPointId", Scooter.class)
+        return entityManager.createQuery("SELECT s FROM Scooter s WHERE s.rentalPoint.id = :rentalPointId ORDER BY s.id ASC", Scooter.class)
                 .setParameter("rentalPointId", rentalPointId)
                 .getResultList();
     }
@@ -29,10 +29,11 @@ public class ScooterRepository extends AbstractDao<Scooter, Long> {
     public List<Scooter> findAvailableByRentalPoint(Long rentalPointId, Integer batteryLevel) {
 
         return entityManager.createQuery(
-                     "SELECT s FROM Scooter s " +
+                "SELECT s FROM Scooter s " +
                         "WHERE s.rentalPoint.id = :rentalPointId " +
                         "AND s.scooterStatus = :status " +
-                        "AND s.batteryLevel >= :batteryLevel", Scooter.class)
+                        "AND s.batteryLevel >= :batteryLevel " +
+                        "ORDER BY s.batteryLevel DESC", Scooter.class)
                 .setParameter("rentalPointId", rentalPointId)
                 .setParameter("status", ScooterStatus.AVAILABLE)
                 .setParameter("batteryLevel", batteryLevel)

@@ -14,6 +14,7 @@ import org.example.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -27,11 +28,18 @@ public class UserController {
     private final UserMapper userMapper;
 
     @GetMapping("/username/{username}")
-    @Operation(summary = "Получить пользователя по имени (админ/владелец)")
-    @PreAuthorize("hasRole('ADMIN') or #username == authentication.principal.username")
-    public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) { // админам или самому себе
+    @Operation(summary = "Получить пользователя по имени (админ)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) { // админам
         User user = userService.findByUsername(username);
         return ResponseEntity.ok(userMapper.toDto(user));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Получить мой профиль")
+    public ResponseEntity<UserResponseDto> getMyProfile() { // только себе
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(userMapper.toDto(userService.findById(currentUser.getId())));
     }
 
     @GetMapping("/{id}")
@@ -43,18 +51,34 @@ public class UserController {
     }
 
     @PostMapping("/{id}/balance")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Пополнить баланс")
     public ResponseEntity<UserResponseDto> addBalance(@PathVariable Long id, @RequestParam BigDecimal amount) {
         User user = userService.addBalance(id, amount);
         return ResponseEntity.ok(userMapper.toDto(user));
     }
 
+    @PostMapping("/me/balance")
+    @Operation(summary = "Пополнить мой баланс")
+    public ResponseEntity<UserResponseDto> addMyBalance(@RequestParam BigDecimal amount) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userService.addBalance(currentUser.getId(), amount);
+        return ResponseEntity.ok(userMapper.toDto(user));
+    }
+
     @PatchMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить личную информацию пользователя", description = "Изменение имени или пароля.")
     public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long id,@Valid @RequestBody UserUpdateDto userUpdateDto) {
         User user = userService.updateUser(id,userUpdateDto);
+        return ResponseEntity.ok(userMapper.toDto(user));
+    }
+
+    @PatchMapping("/me")
+    @Operation(summary = "Обновить мою информацию")
+    public ResponseEntity<UserResponseDto> updateMe(@Valid @RequestBody UserUpdateDto dto) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userService.updateUser(currentUser.getId(), dto);
         return ResponseEntity.ok(userMapper.toDto(user));
     }
 

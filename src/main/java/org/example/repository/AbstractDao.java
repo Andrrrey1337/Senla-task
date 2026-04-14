@@ -30,7 +30,7 @@ public abstract class AbstractDao<T, ID> {
     }
 
     public List<T> findAll() {
-        return entityManager.createQuery("FROM " + entityClass.getSimpleName(), entityClass).getResultList();
+        return entityManager.createQuery("FROM " + entityClass.getSimpleName() + " e ORDER BY e.id ASC", entityClass).getResultList();
     }
 
     // если объекта нет в контексте, сначала добавляем а потом удаляем

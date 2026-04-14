@@ -22,14 +22,14 @@ public class RentalRepository extends AbstractDao<Rental, Long> {
     }
 
     public List<Rental> findByScooterId(Long scooterId) {
-        return entityManager.createQuery("SELECT r FROM Rental r WHERE r.scooter.id = :scooterId", Rental.class)
+        return entityManager.createQuery("SELECT r FROM Rental r WHERE r.scooter.id = :scooterId ORDER BY r.id DESC", Rental.class)
                 .setParameter("scooterId", scooterId)
                 .getResultList();
     }
 
     public List<Rental> findAllByUserId(Long userId) {
         return entityManager.createQuery("SELECT r FROM Rental r " +
-                        "WHERE r.user.id = :userId ", Rental.class)
+                        "WHERE r.user.id = :userId ORDER BY r.id DESC", Rental.class)
                 .setParameter("userId", userId)
                 .getResultList();
     }
