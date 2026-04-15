@@ -41,6 +41,10 @@ public class User implements UserDetails {
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @Column(name = "held_balance", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal heldBalance = BigDecimal.ZERO;
+
     // для UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,25 +36,39 @@ public class RentalService {
     private final UserSubscriptionRepository userSubscriptionRepository;
 
     private static final double EARTH_RADIUS_KM = 6371.0;
+    private static final int DEFAULT_HOLD_MINUTES = 10;
 
     public Rental startRental(StartRentalDto rentalDto) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Tariff tariff = tariffService.findTariffById(rentalDto.getTariffId());
+        Scooter scooter = scooterService.findScooterById(rentalDto.getScooterId());
 
         if (rentalRepository.findActiveRentalByUserId(user.getId()).isPresent()) {
             throw new BusinessException("У пользователя уже есть активная поездка");
         }
 
-        if (user.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Недостаточно средств на балансе для начала поездки");
-        }
-
-        Scooter scooter = scooterService.findScooterById(rentalDto.getScooterId());
-
         if (scooter.getScooterStatus() == ScooterStatus.RENTED) {
             throw new BusinessException("Самокат уже занят");
         }
 
-        Tariff tariff = tariffService.findTariffById(rentalDto.getTariffId());
+        // Расчет суммы для холдирования (старт + 10 минут)
+        BigDecimal pricePerMinute = scooter.getScooterModel().getPricePerMinute();
+        BigDecimal holdAmount = tariff.getPrice().add(pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES)));
+
+        // Проверяем подписки для уточнения холда (если старт бесплатный)
+        Optional<UserSubscription> userSub = userSubscriptionRepository.findActiveByUserId(user.getId());
+        if (userSub.isPresent() && userSub.get().getSubscription().getIsFreeStart()) {
+            holdAmount = pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES));
+        }
+
+        if (user.getBalance().compareTo(holdAmount) < 0) {
+            throw new BusinessException("Недостаточно средств на балансе для начала поездки (требуется " + holdAmount + ")");
+        }
+
+        // Холдируем средства
+        user.setBalance(user.getBalance().subtract(holdAmount));
+        user.setHeldBalance(user.getHeldBalance().add(holdAmount));
+        userRepository.update(user);
 
         PromoCode promoCode = null;
         if (rentalDto.getPromoCode() != null && !rentalDto.getPromoCode().isBlank()) {
@@ -144,20 +159,23 @@ public class RentalService {
         // расчет промиков
         if (rental.getPromoCode() != null) {
             int discount = rental.getPromoCode().getDiscount();
-            BigDecimal discountMultiplier = BigDecimal.valueOf(discount).divide(BigDecimal.valueOf(100));
+            BigDecimal discountMultiplier = BigDecimal.valueOf(discount).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
             BigDecimal discountPrice = totalPrice.multiply(discountMultiplier);
             totalPrice = totalPrice.subtract(discountPrice);
         }
 
         rental.setPrice(totalPrice);
 
-        // считаем расстояние
-        BigDecimal mileage = getDistance(rental.getStartLatitude(), rental.getStartLongitude(), rental.getEndLatitude(), rental.getEndLongitude());
+        // берем расстояние с самоката
+        BigDecimal mileage = finishRentalDto.getDistance();
         rental.setDistance(mileage);
 
-        // обновляем баланс
+        // обновляем баланс (возврат холда и списание фактической цены)
         User user = rental.getUser();
-        user.setBalance(user.getBalance().subtract(totalPrice));
+        BigDecimal heldAmount = user.getHeldBalance();
+        user.setHeldBalance(BigDecimal.ZERO);
+        user.setBalance(user.getBalance().add(heldAmount).subtract(totalPrice));
+        userRepository.update(user);
 
         // обновляем данные самоката
         Scooter scooter = rental.getScooter();

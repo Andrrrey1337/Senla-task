@@ -19,9 +19,14 @@ public class FinishRentalDto {
     @Schema(description = "Широта в точке завершения", example = "53.9006")
     private BigDecimal endLatitude;
 
-    @NotNull(message = "Конечная долгота обязательна")
+    @NotNull(message = "Долгота обязательна")
     @DecimalMin(value = "-180.0", message = "Долгота должна быть от -180 до 180")
     @DecimalMax(value = "180.0", message = "Долгота должна быть от -180 до 180")
     @Schema(description = "Долгота в точке завершения", example = "27.5590")
     private BigDecimal endLongitude;
+
+    @NotNull(message = "Расстояние (дистанция) обязательно")
+    @DecimalMin(value = "0.0", message = "Дистанция не может быть отрицательной")
+    @Schema(description = "Расстояние поездки, присланное самокатом (км)", example = "1.52")
+    private BigDecimal distance;
 }

@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changeset/004-add-unique-to-scooter-models.sql
   - include:
       file: db/changeset/005-add-admin.sql
+  - include:
+      file: db/changeset/006-add-held-balance-to-users.sql
