@@ -2,6 +2,8 @@ package org.example.service;
 
 import org.example.dto.tariff.TariffUpdateDto;
 import org.example.entity.Tariff;
+import org.example.exception.BusinessException;
+import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.TariffMapper;
 import org.example.repository.TariffRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +24,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class TariffServiceTest {
 
-    @Mock
-    private TariffRepository tariffRepository;
-
-    @Mock
-    private TariffMapper tariffMapper;
+    @Mock private TariffRepository tariffRepository;
+    @Mock private TariffMapper tariffMapper;
 
     @InjectMocks
     private TariffService tariffService;
@@ -54,6 +53,19 @@ class TariffServiceTest {
         assertNotNull(result);
         assertEquals("Базовый", result.getName());
         verify(tariffRepository, times(1)).create(testTariff);
+    }
+
+    @Test
+    @DisplayName("Ошибка создания: тариф с таким именем уже существует")
+    void createTariff_NameAlreadyExists_ThrowsBusinessException() {
+        when(tariffRepository.findByName(testTariff.getName())).thenReturn(Optional.of(testTariff));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> tariffService.createTariff(testTariff));
+
+        assertEquals("Тариф с названием 'Базовый' уже существует", exception.getMessage());
+
+        verify(tariffRepository, never()).create(any(Tariff.class));
     }
 
     @Test
@@ -104,6 +116,39 @@ class TariffServiceTest {
 
         assertNotNull(result);
         verify(tariffMapper, times(1)).updateEntity(updateDto, testTariff);
+    }
+
+    @Test
+    @DisplayName("Ошибка обновления: новое имя тарифа уже занято другим тарифом")
+    void updateTariff_NameAlreadyTaken_ThrowsBusinessException() {
+        TariffUpdateDto updateDto = new TariffUpdateDto();
+        updateDto.setName("Премиум"); //  переименовать "Базовый" в "Премиум"
+
+        Tariff existingPremiumTariff = new Tariff();
+        existingPremiumTariff.setId(2L);
+        existingPremiumTariff.setName("Премиум");
+
+        when(tariffRepository.findById(1L)).thenReturn(Optional.of(testTariff)); //  текущий тариф
+        // имя "Премиум" уже занято другим тарифом в базе
+        when(tariffRepository.findByName("Премиум")).thenReturn(Optional.of(existingPremiumTariff));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> tariffService.updateTariff(1L, updateDto));
+
+        assertEquals("Тариф с названием 'Премиум' уже существует", exception.getMessage());
+
+        verify(tariffMapper, never()).updateEntity(any(), any());
+    }
+
+    @Test
+    @DisplayName("Ошибка: тариф не найден по ID")
+    void findTariffById_NotFound_ThrowsResourceNotFoundException() {
+        when(tariffRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> tariffService.findTariffById(99L));
+
+        assertEquals("Тариф с ID 99 не найден", exception.getMessage());
     }
 
     @Test

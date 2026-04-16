@@ -212,28 +212,4 @@ public class RentalService {
 
         return rentals;
     }
-
-    private BigDecimal getDistance(BigDecimal startLat, BigDecimal startLon, BigDecimal endLat, BigDecimal endLon) {
-        if (startLat ==  null || startLon == null || endLat == null || endLon == null) {
-            return BigDecimal.ZERO;
-        }
-
-        double lat1 = startLat.doubleValue();
-        double lon1 = startLon.doubleValue();
-        double lat2 = endLat.doubleValue();
-        double lon2 = endLon.doubleValue();
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = EARTH_RADIUS_KM * c;
-
-        // округляем до 2 знаков после запятой
-        return BigDecimal.valueOf(distance).setScale(2, java.math.RoundingMode.HALF_UP);
-    }
 }

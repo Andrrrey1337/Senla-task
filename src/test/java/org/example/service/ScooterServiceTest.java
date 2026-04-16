@@ -1,0 +1,128 @@
+package org.example.service;
+
+import org.example.dto.scooter.ScooterCreateDto;
+import org.example.dto.scooter.ScooterUpdateDto;
+import org.example.entity.RentalPoint;
+import org.example.entity.Scooter;
+import org.example.exception.BusinessException;
+import org.example.exception.ResourceNotFoundException;
+import org.example.mapper.ScooterMapper;
+import org.example.repository.RentalPointRepository;
+import org.example.repository.ScooterRepository;
+import org.example.service.ScooterService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ScooterServiceTest {
+
+    @Mock private ScooterRepository scooterRepository;
+    @Mock private ScooterMapper scooterMapper;
+    @Mock private RentalPointRepository rentalPointRepository;
+
+    @InjectMocks
+    private ScooterService scooterService;
+
+    private Scooter scooter;
+    private ScooterCreateDto scooterCreateDto;
+    private Long scooterId = 1L;
+    private String serialNumber = "SN123";
+
+    @BeforeEach
+    void setUp() {
+        scooter = new Scooter();
+        scooter.setId(scooterId);
+        scooter.setSerialNumber(serialNumber);
+
+        scooterCreateDto = new ScooterCreateDto();
+        scooterCreateDto.setSerialNumber(serialNumber);
+        scooterCreateDto.setRentalPointId(1L);
+    }
+
+    @Test
+    @DisplayName("createScooter - Успех")
+    void createScooter_Success() {
+        when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.empty());
+        when(scooterMapper.toEntity(scooterCreateDto)).thenReturn(scooter);
+        when(rentalPointRepository.findById(1L)).thenReturn(Optional.of(new RentalPoint()));
+        when(scooterRepository.create(scooter)).thenReturn(scooter);
+
+        Scooter result = scooterService.createScooter(scooterCreateDto);
+
+        assertNotNull(result);
+        assertEquals(serialNumber, result.getSerialNumber());
+        verify(scooterRepository).create(scooter);
+    }
+
+    @Test
+    @DisplayName("createScooter - Уже существует")
+    void createScooter_AlreadyExists_ThrowsBusinessException() {
+        when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.of(scooter));
+        assertThrows(BusinessException.class, () -> scooterService.createScooter(scooterCreateDto));
+    }
+
+    @Test
+    @DisplayName("findScooterById - Успех")
+    void findScooterById_Success() {
+        when(scooterRepository.findById(scooterId)).thenReturn(Optional.of(scooter));
+        Scooter result = scooterService.findScooterById(scooterId);
+        assertEquals(scooterId, result.getId());
+    }
+
+    @Test
+    @DisplayName("findScooterById - Не найден")
+    void findScooterById_NotFound_ThrowsResourceNotFoundException() {
+        when(scooterRepository.findById(scooterId)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> scooterService.findScooterById(scooterId));
+    }
+
+    @Test
+    @DisplayName("findScooterBySerialNumber - Успех")
+    void findScooterBySerialNumber_Success() {
+        when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.of(scooter));
+        Scooter result = scooterService.findScooterBySerialNumber(serialNumber);
+        assertEquals(serialNumber, result.getSerialNumber());
+    }
+
+    @Test
+    @DisplayName("findAvailableScooters - Успех")
+    void findAvailableScooters_Success() {
+        when(scooterRepository.findAvailableByRentalPoint(1L, 20)).thenReturn(Collections.singletonList(scooter));
+        List<Scooter> result = scooterService.findAvailableScooters(1L, 20);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    @DisplayName("updateScooter - Успех")
+    void updateScooter_Success() {
+        ScooterUpdateDto updateDto = new ScooterUpdateDto();
+        when(scooterRepository.findById(scooterId)).thenReturn(Optional.of(scooter));
+
+        scooterService.updateScooter(scooterId, updateDto);
+
+        verify(scooterMapper).updateEntity(updateDto, scooter);
+    }
+
+    @Test
+    @DisplayName("deleteScooterById - Успех")
+    void deleteScooterById_Success() {
+        when(scooterRepository.findById(scooterId)).thenReturn(Optional.of(scooter));
+
+        scooterService.deleteScooterById(scooterId);
+
+        verify(scooterRepository, times(1)).deleteById(scooterId);
+    }
+}
