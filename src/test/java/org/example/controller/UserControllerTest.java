@@ -1,32 +1,20 @@
 package org.example.controller;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import tools.jackson.databind.ObjectMapper;
 import org.example.dto.user.UserAdminUpdateDto;
 import org.example.dto.user.UserResponseDto;
 import org.example.dto.user.UserUpdateDto;
-import org.example.entity.Role;
 import org.example.entity.User;
 import org.example.mapper.UserMapper;
-import org.example.security.JwtAuthenticationFilter;
-import org.example.security.JwtService;
 import org.example.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,43 +24,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class UserControllerTest {
+class UserControllerTest extends BaseControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean private UserService userService;
-    @MockitoBean private UserMapper userMapper;
-    @MockitoBean private JwtService jwtService;
-    @MockitoBean private UserDetailsService userDetailsService;
-    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockitoBean
+    private UserService userService;
+    @MockitoBean
+    private UserMapper userMapper;
 
     private User user;
     private UserResponseDto userResponseDto;
 
     @BeforeEach
     void setUp() {
-        User mockUser = new User();
-        mockUser.setId(1L);
-        mockUser.setUsername("admin");
-        mockUser.setRole(Role.ADMIN); // Выдаем права
-
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ADMIN"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("USER"),
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
-
-
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                mockUser, null, authorities
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
         user = new User();
         user.setId(1L);
         user.setUsername("testuser");
@@ -124,7 +87,7 @@ class UserControllerTest {
         when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         mockMvc.perform(post("/api/users/1/balance")
-                .param("amount", "100.00"))
+                        .param("amount", "100.00"))
                 .andExpect(status().isOk());
     }
 
@@ -135,7 +98,7 @@ class UserControllerTest {
         when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         mockMvc.perform(post("/api/users/me/balance")
-                .param("amount", "100.00"))
+                        .param("amount", "100.00"))
                 .andExpect(status().isOk());
     }
 
@@ -144,13 +107,13 @@ class UserControllerTest {
     void updateMe_ReturnsOk() throws Exception {
         UserUpdateDto updateDto = new UserUpdateDto();
         updateDto.setUsername("newUsername");
-        
+
         when(userService.updateUser(eq(1L), any(UserUpdateDto.class))).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/me")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk());
     }
 
@@ -162,8 +125,8 @@ class UserControllerTest {
         when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk());
     }
 
@@ -175,8 +138,8 @@ class UserControllerTest {
         when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/1/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(adminDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(adminDto)))
                 .andExpect(status().isOk());
     }
 }

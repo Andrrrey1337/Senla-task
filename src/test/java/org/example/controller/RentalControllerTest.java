@@ -1,35 +1,22 @@
 package org.example.controller;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import tools.jackson.databind.ObjectMapper;
 import org.example.dto.rental.FinishRentalDto;
 import org.example.dto.rental.RentalAdminResponseDto;
 import org.example.dto.rental.RentalResponseDto;
 import org.example.dto.rental.StartRentalDto;
 import org.example.entity.Rental;
-import org.example.entity.Role;
-import org.example.entity.User;
 import org.example.mapper.RentalMapper;
-import org.example.security.JwtAuthenticationFilter;
-import org.example.security.JwtService;
 import org.example.service.RentalService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,23 +26,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(RentalController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class RentalControllerTest {
+class RentalControllerTest extends BaseControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean private RentalService rentalService;
-    @MockitoBean private RentalMapper rentalMapper;
-    @MockitoBean private JwtService jwtService;
-    @MockitoBean private UserDetailsService userDetailsService;
-    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockitoBean
+    private RentalService rentalService;
+    @MockitoBean
+    private RentalMapper rentalMapper;
 
     private Rental rental;
     private RentalResponseDto responseDto;
-    private User user;
 
     @BeforeEach
     void setUp() {
@@ -64,23 +43,6 @@ class RentalControllerTest {
 
         responseDto = new RentalResponseDto();
         responseDto.setId(1L);
-
-        User mockUser = new User();
-        mockUser.setId(1L);
-        mockUser.setUsername("admin");
-        mockUser.setRole(Role.ADMIN); // Выдаем права
-
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ADMIN"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("USER"),
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
-
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                mockUser, null, authorities
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Test
@@ -95,8 +57,8 @@ class RentalControllerTest {
         when(rentalMapper.toDto(any())).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/rentals/start")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(startDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(startDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -113,8 +75,8 @@ class RentalControllerTest {
         when(rentalMapper.toDto(any())).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/rentals/1/finish")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(finishDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(finishDto)))
                 .andExpect(status().isOk());
     }
 

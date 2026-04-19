@@ -1,34 +1,22 @@
 package org.example.controller;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import tools.jackson.databind.ObjectMapper;
 import org.example.dto.subscription.SubscriptionCreateDto;
 import org.example.dto.subscription.SubscriptionResponseDto;
 import org.example.dto.subscription.SubscriptionUpdateDto;
 import org.example.dto.subscription.UserSubscriptionResponseDto;
-import org.example.entity.Role;
 import org.example.entity.Subscription;
-import org.example.entity.User;
 import org.example.entity.UserSubscription;
 import org.example.mapper.SubscriptionMapper;
 import org.example.mapper.UserSubscriptionMapper;
-import org.example.security.JwtAuthenticationFilter;
-import org.example.security.JwtService;
 import org.example.service.SubscriptionService;
 import org.example.service.UserSubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -42,21 +30,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SubscriptionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class SubscriptionControllerTest {
+class SubscriptionControllerTest extends BaseControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean private SubscriptionService subscriptionService;
-    @MockitoBean private SubscriptionMapper subscriptionMapper;
-    @MockitoBean private UserSubscriptionMapper userSubscriptionMapper;
-    @MockitoBean private UserSubscriptionService userSubscriptionService;
-    @MockitoBean private JwtService jwtService;
-    @MockitoBean private UserDetailsService userDetailsService;
-    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean
+    private SubscriptionService subscriptionService;
+    @MockitoBean
+    private SubscriptionMapper subscriptionMapper;
+    @MockitoBean
+    private UserSubscriptionMapper userSubscriptionMapper;
+    @MockitoBean
+    private UserSubscriptionService userSubscriptionService;
 
     private Subscription testSubscription;
     private SubscriptionResponseDto subscriptionResponseDto;
@@ -64,23 +47,6 @@ class SubscriptionControllerTest {
 
     @BeforeEach
     void setUp() {
-        User mockUser = new User();
-        mockUser.setId(1L);
-        mockUser.setUsername("admin");
-        mockUser.setRole(Role.ADMIN); // Выдаем права
-
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ADMIN"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("USER"),
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
-
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                mockUser, null, authorities
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
         testSubscription = Subscription.builder()
                 .id(1L)
                 .name("Monthly")
@@ -117,8 +83,8 @@ class SubscriptionControllerTest {
         when(subscriptionMapper.toDto(any())).thenReturn(subscriptionResponseDto);
 
         mockMvc.perform(post("/api/subscriptions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Monthly"));
     }

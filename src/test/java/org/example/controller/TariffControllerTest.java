@@ -1,29 +1,18 @@
 package org.example.controller;
 
-import org.example.entity.Role;
-import org.example.entity.User;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import tools.jackson.databind.ObjectMapper;
 import org.example.dto.tariff.TariffCreateDto;
 import org.example.dto.tariff.TariffResponseDto;
 import org.example.dto.tariff.TariffUpdateDto;
 import org.example.entity.Tariff;
 import org.example.mapper.TariffMapper;
-import org.example.security.JwtService;
 import org.example.service.TariffService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,41 +25,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = TariffController.class)
 @AutoConfigureMockMvc(addFilters = false) // отключаем Security для тестов контроллера
-class TariffControllerTest {
+class TariffControllerTest extends BaseControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean private TariffService tariffService;
-    @MockitoBean private TariffMapper tariffMapper;
-    @MockitoBean private JwtService jwtService; // Нужен для загрузки контекста
-    @MockitoBean private UserDetailsService userDetailsService;
+    @MockitoBean
+    private TariffService tariffService;
+    @MockitoBean
+    private TariffMapper tariffMapper;
 
     private Tariff testTariff;
     private TariffResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
-        User mockUser = new User();
-        mockUser.setId(1L);
-        mockUser.setUsername("admin");
-        mockUser.setRole(Role.ADMIN); // Выдаем права
-
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ADMIN"),
-                new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("USER"),
-                new SimpleGrantedAuthority("ROLE_USER")
-        );
-
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                mockUser, null, authorities
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
         testTariff = Tariff.builder()
                 .id(1L)
                 .name("Standard")
