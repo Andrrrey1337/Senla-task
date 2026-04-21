@@ -11,6 +11,26 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scooter_rental"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: . # ищет dockerfile в нынешней папке
+    container_name: scooter_app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # переопределяем настройки из application.yaml чтобы программа видела бд внутри докера
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scooter_rental
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy # будет ждать пока БД не готова
 
 volumes:
   pgdata:
