@@ -1,7 +1,7 @@
 # Scooter Rental System 🛴
 
 ![Java](https://img.shields.io/badge/Java-17-orange)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.0.5-brightgreen)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
 
