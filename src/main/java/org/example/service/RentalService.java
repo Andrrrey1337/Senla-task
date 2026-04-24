@@ -35,7 +35,6 @@ public class RentalService {
     private final PromoCodeRepository promoCodeRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
 
-    private static final double EARTH_RADIUS_KM = 6371.0;
     private static final int DEFAULT_HOLD_MINUTES = 10;
 
     public Rental startRental(StartRentalDto rentalDto) {
@@ -56,7 +55,7 @@ public class RentalService {
         BigDecimal holdAmount = tariff.getPrice().add(pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES)));
 
         // Проверяем подписки для уточнения холда (если старт бесплатный)
-        Optional<UserSubscription> userSub = userSubscriptionRepository.findActiveByUserId(user.getId());
+        Optional<UserSubscription> userSub = getValidUserSubscription(user.getId());
         if (userSub.isPresent() && userSub.get().getSubscription().getIsFreeStart()) {
             holdAmount = pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES));
         }
@@ -103,96 +102,106 @@ public class RentalService {
         Rental rental = rentalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Поездка с ID " + id + " не найдена"));
 
+        validateRentalFinish(rental);
+
+        // Фиксируем базовые данные поездки
+        rental.setEndLatitude(finishRentalDto.getEndLatitude());
+        rental.setEndLongitude(finishRentalDto.getEndLongitude());
+        rental.setEndTime(LocalDateTime.now());
+        rental.setIsActive(false);
+        rental.setDistance(finishRentalDto.getDistance());
+
+        // Расчет стоимости
+        long durationMinutes = calculateDuration(rental.getStartTime(), rental.getEndTime());
+        BigDecimal totalPrice = calculateFinalPrice(rental, durationMinutes);
+        rental.setPrice(totalPrice);
+
+        // Обновление баланса
+        updateUserBalanceAfterRental(rental.getUser(), totalPrice);
+
+        // Обновление состояния самоката
+        updateScooterDataAfterRental(rental.getScooter(), finishRentalDto);
+
+        log.info("Поездка ID={} успешно завершена. Списано: {}. Длительность: {} мин. Дистанция: {} км",
+                rental.getId(), totalPrice, durationMinutes, finishRentalDto.getDistance());
+
+        return rental;
+    }
+
+    private void validateRentalFinish(Rental rental) {
         if (!rental.getIsActive()) {
             throw new BusinessException("Эта поездка уже была завершена ранее");
         }
 
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         boolean isOwner = rental.getUser().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
 
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("Вы не можете завершить чужую поездку!");
         }
+    }
 
-        // обновляем поездку
-        rental.setEndLatitude(finishRentalDto.getEndLatitude());
-        rental.setEndLongitude(finishRentalDto.getEndLongitude());
-        rental.setEndTime(LocalDateTime.now());
-        rental.setIsActive(false);
+    private long calculateDuration(LocalDateTime start, LocalDateTime end) {
+        long minutes = Duration.between(start, end).toMinutes();
+        return minutes <= 0 ? 1 : minutes;
+    }
 
-
-        //считаем данные о поездке
-        BigDecimal durationMinutes = BigDecimal.valueOf(Duration.between(rental.getStartTime(), rental.getEndTime()).toMinutes());
-        if (durationMinutes.compareTo(BigDecimal.ZERO) <= 0) {
-            durationMinutes = BigDecimal.ONE;
-        }
+    private BigDecimal calculateFinalPrice(Rental rental, long durationMinutes) {
         BigDecimal pricePerMinute = rental.getScooter().getScooterModel().getPricePerMinute();
-        BigDecimal tariffPrice = rental.getTariff().getPrice(); // стомость старта
+        BigDecimal tariffPrice = rental.getTariff().getPrice();
+        BigDecimal effectiveDuration = BigDecimal.valueOf(durationMinutes);
 
-        // Оработка подписок
-        Optional<UserSubscription> userSubscriptionOptional = userSubscriptionRepository.findActiveByUserId(rental.getUser().getId());
-        if (userSubscriptionOptional.isPresent()) {
-            UserSubscription  userSubscription = userSubscriptionOptional.get();
-
-            if (userSubscription.getSubscription().getIsFreeStart()) {
-                tariffPrice = BigDecimal.ZERO; // бесплатный старт
+        // Обработка абонемента
+        Optional<UserSubscription> userSubOpt = getValidUserSubscription(rental.getUser().getId());
+        if (userSubOpt.isPresent()) {
+            UserSubscription userSub = userSubOpt.get();
+            if (userSub.getSubscription().getIsFreeStart()) {
+                tariffPrice = BigDecimal.ZERO;
             }
 
-            int availableMinutes = userSubscription.getRemainingMinutes();
-            if (availableMinutes > 0) {
-                int tripMin = durationMinutes.intValue();
-
-                if (availableMinutes >= tripMin) { // если минут в абонементе осталось больше чем была поездка
-                    userSubscription.setRemainingMinutes(availableMinutes - tripMin);
-                    durationMinutes = BigDecimal.ZERO;
-                } else { // если оставшихся в абонементе минут не хватает на всю поездку
-                    durationMinutes = BigDecimal.valueOf(tripMin - availableMinutes);
-                    userSubscription.setRemainingMinutes(0);
+            int availableMin = userSub.getRemainingMinutes();
+            if (availableMin > 0) {
+                if (availableMin >= durationMinutes) {
+                    userSub.setRemainingMinutes(availableMin - (int) durationMinutes);
+                    effectiveDuration = BigDecimal.ZERO;
+                } else {
+                    effectiveDuration = BigDecimal.valueOf(durationMinutes - availableMin);
+                    userSub.setRemainingMinutes(0);
                 }
+                userSubscriptionRepository.update(userSub);
             }
         }
 
-        BigDecimal totalPrice = pricePerMinute.multiply(durationMinutes).add(tariffPrice);
+        BigDecimal totalPrice = pricePerMinute.multiply(effectiveDuration).add(tariffPrice);
 
-        // расчет промиков
+        // Применение промокода
         if (rental.getPromoCode() != null) {
-            int discount = rental.getPromoCode().getDiscount();
-            BigDecimal discountMultiplier = BigDecimal.valueOf(discount).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-            BigDecimal discountPrice = totalPrice.multiply(discountMultiplier);
-            totalPrice = totalPrice.subtract(discountPrice);
+            BigDecimal discount = BigDecimal.valueOf(rental.getPromoCode().getDiscount())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            totalPrice = totalPrice.subtract(totalPrice.multiply(discount));
         }
 
-        rental.setPrice(totalPrice);
+        return totalPrice;
+    }
 
-        // берем расстояние с самоката
-        BigDecimal mileage = finishRentalDto.getDistance();
-        rental.setDistance(mileage);
-
-        // обновляем баланс (возврат холда и списание фактической цены)
-        User user = rental.getUser();
+    private void updateUserBalanceAfterRental(User user, BigDecimal totalPrice) {
         BigDecimal heldAmount = user.getHeldBalance();
         user.setHeldBalance(BigDecimal.ZERO);
         user.setBalance(user.getBalance().add(heldAmount).subtract(totalPrice));
         userRepository.update(user);
+    }
 
-        // обновляем данные самоката
-        Scooter scooter = rental.getScooter();
+    private void updateScooterDataAfterRental(Scooter scooter, FinishRentalDto dto) {
         scooter.setScooterStatus(ScooterStatus.AVAILABLE);
-        scooter.setLongitude(finishRentalDto.getEndLongitude());
-        scooter.setLatitude(finishRentalDto.getEndLatitude());
+        scooter.setLongitude(dto.getEndLongitude());
+        scooter.setLatitude(dto.getEndLatitude());
 
         if (scooter.getMileage() == null) {
             scooter.setMileage(BigDecimal.ZERO);
         }
-
-        scooter.setMileage(scooter.getMileage().add(mileage));
-
-        log.info("Поездка ID={} успешно завершена. Списано: {}. Длительность: {} мин. Дистанция: {} км",
-                rental.getId(), totalPrice, durationMinutes, mileage);
-
-        return rental;
+        scooter.setMileage(scooter.getMileage().add(dto.getDistance()));
+        scooterRepository.update(scooter);
     }
 
     public List<Rental> findRentalsByUserId(Long userId) {
@@ -211,5 +220,21 @@ public class RentalService {
         log.info("Получена история аренды для самоката с ID={}. Количество записей: {}", scooterId, rentals.size());
 
         return rentals;
+    }
+
+    private Optional<UserSubscription> getValidUserSubscription(Long userId) {
+        Optional<UserSubscription> userSubscriptionOptional = userSubscriptionRepository.findActiveByUserId(userId);
+
+        if (userSubscriptionOptional.isPresent()) {
+            UserSubscription userSubscription = userSubscriptionOptional.get();
+            if (userSubscription.getEndDate().isBefore(LocalDateTime.now())) {
+                log.info("Срок действия абонемента ID={} для пользователя ID={} истек. Деактивация.",
+                        userSubscription.getId(), userId);
+                userSubscription.setIsActive(false);
+                userSubscriptionRepository.update(userSubscription);
+                return Optional.empty();
+            }
+        }
+        return userSubscriptionOptional;
     }
 }

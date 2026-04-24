@@ -9,7 +9,6 @@ import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterMapper;
 import org.example.repository.RentalPointRepository;
-import org.example.repository.ScooterModelRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

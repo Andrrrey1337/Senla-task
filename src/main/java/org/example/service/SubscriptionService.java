@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.subscription.SubscriptionUpdateDto;
 import org.example.entity.Subscription;
-import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.SubscriptionMapper;
 import org.example.repository.SubscriptionRepository;
