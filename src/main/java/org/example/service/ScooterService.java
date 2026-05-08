@@ -51,8 +51,10 @@ public class ScooterService {
         Scooter scooter = findScooterById(id);
         scooterMapper.updateEntity(scooterDto, scooter);
 
-        if (scooterDto.getRentalPointId() != null) {
+        if (null != scooterDto.getRentalPointId()) {
             assignRentalPoint(scooter, scooterDto.getRentalPointId());
+        } else {
+            log.info("Новая точка проката не указана для самоката ID={}, пропуск перепривязки", id);
         }
 
         log.info("Данные самоката с ID {} успешно обновлены", scooter.getId());
@@ -61,22 +63,24 @@ public class ScooterService {
 
     // установка точки
     private void assignRentalPoint(Scooter scooter, Long rentalPointId) {
-        if (rentalPointId == null) return;
+        if (null == rentalPointId) {
+            log.info("Метод assignRentalPoint вызван с null ID, пропуск");
+            return;
+        }
 
-        validateRentalPointForScooter(rentalPointId);
-
-        scooter.setRentalPoint(rentalPointRepository.findById(rentalPointId)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + rentalPointId + " не найдена")));
+        RentalPoint point = validateRentalPointForScooter(rentalPointId);
+        scooter.setRentalPoint(point);
     }
 
     // есть ли у точки дочерние элементы
-    private void validateRentalPointForScooter(Long rentalPointId) {
+    private RentalPoint validateRentalPointForScooter(Long rentalPointId) {
         RentalPoint point = rentalPointRepository.findById(rentalPointId)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката не найдена"));
+                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + rentalPointId + " не найдена"));
 
-        if (rentalPointService.getAddressLevel(point) != 3) {
+        if (3 != rentalPointService.getAddressLevel(point)) {
             throw new BusinessException("Самокат можно привязать только к конечной точке проката");
         }
+        return point;
     }
 
     private void validateSerialNumberUniqueness(String serialNumber) {

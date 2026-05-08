@@ -12,12 +12,15 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"scooterModel", "rentalPoint"})
 public class Scooter {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "scooter_seq")
     @SequenceGenerator(name = "scooter_seq", sequenceName = "scooters_id_seq", allocationSize = 50)
     private Long id;
 
+    @EqualsAndHashCode.Include
     @Column(name = "serial_number",  nullable = false, unique = true, length = 20)
     private String serialNumber;
 

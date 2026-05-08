@@ -64,9 +64,13 @@ public class ScooterModelService {
     public ScooterModelResponseDto updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = findScooterModelById(id);
 
-        if (scooterModelUpdateDto.getName() != null && !scooterModelUpdateDto.getName().equals(scooterModel.getName())
-                && scooterModelRepository.findByName(scooterModelUpdateDto.getName()).isPresent()) {
-            throw new BusinessException("Модель самоката с названием '" + scooterModelUpdateDto.getName() + "' уже существует");
+        if (null != scooterModelUpdateDto.getName() && !scooterModelUpdateDto.getName().equals(scooterModel.getName())) {
+            log.info("Обновление названия модели самоката с '{}' на '{}'", scooterModel.getName(), scooterModelUpdateDto.getName());
+            if (scooterModelRepository.findByName(scooterModelUpdateDto.getName()).isPresent()) {
+                throw new BusinessException("Модель самоката с названием '" + scooterModelUpdateDto.getName() + "' уже существует");
+            }
+        } else {
+            log.info("Название модели самоката не предоставлено или не изменилось, пропуск валидации имени");
         }
 
         scooterModelMapper.updateEntity(scooterModelUpdateDto, scooterModel);

@@ -13,10 +13,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"user", "scooter", "tariff", "promoCode"})
 public class Rental {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rentals_seq")
     @SequenceGenerator(name = "rentals_seq", sequenceName = "rentals_id_seq", allocationSize = 50)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

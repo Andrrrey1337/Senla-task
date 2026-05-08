@@ -12,12 +12,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
 public class PromoCode {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "promo_codes_seq")
     @SequenceGenerator(name = "promo_codes_seq", sequenceName = "promo_codes_id_seq", allocationSize = 50)
     private Long id;
 
+    @EqualsAndHashCode.Include
     @Column(name = "code", length = 20, nullable = false, unique = true)
     private String code;
 

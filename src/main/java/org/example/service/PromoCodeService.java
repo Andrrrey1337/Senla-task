@@ -58,9 +58,13 @@ public class PromoCodeService {
     public PromoCodeResponseDto updatePromoCode(Long id, PromoCodeUpdateDto promoCodeUpdateDto){
         PromoCode promoCode = findEntityById(id);
 
-        if (promoCodeUpdateDto.getCode() != null && !promoCodeUpdateDto.getCode().equals(promoCode.getCode())
-                && promoCodeRepository.findByCode(promoCodeUpdateDto.getCode()).isPresent()) {
-            throw new BusinessException("Промокод '" + promoCodeUpdateDto.getCode() + "' уже существует");
+        if (null != promoCodeUpdateDto.getCode() && !promoCodeUpdateDto.getCode().equals(promoCode.getCode())) {
+            log.info("Обновление промокода с '{}' на '{}'", promoCode.getCode(), promoCodeUpdateDto.getCode());
+            if (promoCodeRepository.findByCode(promoCodeUpdateDto.getCode()).isPresent()) {
+                throw new BusinessException("Промокод '" + promoCodeUpdateDto.getCode() + "' уже существует");
+            }
+        } else {
+            log.info("Промокод не предоставлен или не изменился, пропуск валидации кода");
         }
 
         promoCodeMapper.updatePromoCode(promoCodeUpdateDto, promoCode);

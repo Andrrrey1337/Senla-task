@@ -29,10 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String authorizationHeader = request.getHeader("Authorization");
 
             if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                log.info("Заголовок Authorization отсутствует или имеет неверный формат, пропуск JWT фильтра");
                 return;
             }
 
-            String username = jwtService.extractUsername(authorizationHeader.substring(7)); // убираем "Bearer "
+            String jwt = authorizationHeader.substring(7);
+            String username = jwtService.extractUsername(jwt);
 
             // если пользователя нет в контексте (не добавили туда в предыдущих фильтрах)
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -47,8 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.info("Пользователь {} успешно аутентифицирован", username);
+                } else {
+                    log.info("Пользователь {} заблокирован, аутентификация пропущена", username);
                 }
-
+            } else if (username == null) {
+                log.info("Не удалось извлечь имя пользователя из JWT токена");
             }
         } catch (Exception e) {
             log.error("Не удалось установить аутентификацию пользователя в фильтре: {}", e.getMessage());

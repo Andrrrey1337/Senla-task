@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -61,6 +62,7 @@ class UserSubscriptionServiceTest {
                 .user(user)
                 .subscription(subscription)
                 .isActive(true)
+                .endDate(LocalDateTime.now().plusDays(30))
                 .build();
         responseDto = new UserSubscriptionResponseDto();
         responseDto.setIsActive(true);

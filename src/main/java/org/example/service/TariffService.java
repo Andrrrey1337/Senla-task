@@ -65,9 +65,13 @@ public class TariffService {
     public TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto) {
         Tariff existTariff = findTariffById(id);
 
-        if (tariffDto.getName() != null && !tariffDto.getName().equals(existTariff.getName())
-                && tariffRepository.findByName(tariffDto.getName()).isPresent()) {
-            throw new BusinessException("Тариф с названием '" + tariffDto.getName() + "' уже существует");
+        if (null != tariffDto.getName() && !tariffDto.getName().equals(existTariff.getName())) {
+            log.info("Обновление названия тарифа с '{}' на '{}'", existTariff.getName(), tariffDto.getName());
+            if (tariffRepository.findByName(tariffDto.getName()).isPresent()) {
+                throw new BusinessException("Тариф с названием '" + tariffDto.getName() + "' уже существует");
+            }
+        } else {
+            log.info("Название тарифа не предоставлено или не изменилось, пропуск валидации имени");
         }
 
         tariffMapper.updateEntity(tariffDto, existTariff);

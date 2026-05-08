@@ -39,7 +39,7 @@ class RentalServiceTest {
     @Mock private ScooterRepository scooterRepository;
     @Mock private UserRepository userRepository;
     @Mock private PromoCodeRepository promoCodeRepository;
-    @Mock private UserSubscriptionRepository userSubscriptionRepository;
+    @Mock private UserSubscriptionService userSubscriptionService;
     @Mock private RentalPointRepository rentalPointRepository;
     @Mock private RentalMapper rentalMapper;
 
@@ -103,7 +103,7 @@ class RentalServiceTest {
         when(tariffService.findTariffById(1L)).thenReturn(tariff);
         when(scooterService.findScooterById(1L)).thenReturn(scooter);
         when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
-        when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
+        when(userSubscriptionService.findValidActiveSubscription(1L)).thenReturn(Optional.empty());
         when(rentalRepository.create(any(Rental.class))).thenReturn(rental);
         when(rentalMapper.toDto(rental)).thenReturn(responseDto);
 
@@ -152,7 +152,7 @@ class RentalServiceTest {
         when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
 
         // нет подписки с бесплатным стартом
-        when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
+        when(userSubscriptionService.findValidActiveSubscription(1L)).thenReturn(Optional.empty());
 
         user.setBalance(BigDecimal.ZERO);
 
@@ -171,7 +171,7 @@ class RentalServiceTest {
 
         when(tariffService.findTariffById(1L)).thenReturn(tariff);
         when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
-        when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
+        when(userSubscriptionService.findValidActiveSubscription(1L)).thenReturn(Optional.empty());
 
         StartRentalDto startDto = new StartRentalDto();
         startDto.setUserId(1L);
@@ -193,7 +193,7 @@ class RentalServiceTest {
         finishDto.setBatteryLevel(80);
 
         when(rentalRepository.findById(1L)).thenReturn(Optional.of(rental));
-        when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
+        when(userSubscriptionService.findValidActiveSubscription(1L)).thenReturn(Optional.empty());
         when(rentalPointRepository.findNearestValidParkingPoint(any(), any(), anyDouble()))
                 .thenReturn(Optional.of(new RentalPoint()));
         when(rentalMapper.toDto(rental)).thenReturn(responseDto);

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -42,8 +43,28 @@ public class UserSubscriptionService {
         return userSubscriptionMapper.toDto(userSubscription);
     }
 
+    public Optional<UserSubscription> findValidActiveSubscription(Long userId) {
+        Optional<UserSubscription> userSubscriptionOptional = userSubscriptionRepository.findActiveByUserId(userId);
+
+        if (userSubscriptionOptional.isPresent()) {
+            UserSubscription userSubscription = userSubscriptionOptional.get();
+            if (userSubscription.getEndDate().isBefore(LocalDateTime.now())) {
+                log.info("Срок действия абонемента ID={} для пользователя ID={} истек. Деактивация.",
+                        userSubscription.getId(), userId);
+                userSubscription.setIsActive(false);
+                userSubscriptionRepository.update(userSubscription);
+                return Optional.empty();
+            }
+        }
+        return userSubscriptionOptional;
+    }
+
+    public void updateSubscription(UserSubscription userSubscription) {
+        userSubscriptionRepository.update(userSubscription);
+    }
+
     private void validateSubscriptionPurchaseAvailability(Long userId) {
-        if (userSubscriptionRepository.findActiveByUserId(userId).isPresent()) {
+        if (findValidActiveSubscription(userId).isPresent()) {
             throw new BusinessException("У вас уже есть активный абонемент. Дождитесь его окончания.");
         }
     }
@@ -68,9 +89,8 @@ public class UserSubscriptionService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
     public UserSubscription findActiveSubscription(Long userId) { // активный абонемент
-        return userSubscriptionRepository.findActiveByUserId(userId)
+        return findValidActiveSubscription(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("У вас нет активного абонемента"));
     }
 

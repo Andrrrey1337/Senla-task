@@ -36,7 +36,7 @@ public class RentalService {
     private final ScooterRepository scooterRepository;
     private final UserRepository userRepository;
     private final PromoCodeRepository promoCodeRepository;
-    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserSubscriptionService userSubscriptionService;
     private final RentalPointRepository rentalPointRepository;
     private final RentalMapper rentalMapper;
 
@@ -89,8 +89,8 @@ public class RentalService {
         }
 
         User currentUser = getAuthenticatedUser();
-        boolean isOwner = rental.getUser() != null && rental.getUser().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+        boolean isOwner = null != rental.getUser() && rental.getUser().getId().equals(currentUser.getId());
+        boolean isAdmin = Role.ADMIN == currentUser.getRole();
 
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("Вы не можете завершить чужую поездку!");
@@ -99,7 +99,7 @@ public class RentalService {
 
     private User getAuthenticatedUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) {
+        if (null == authentication || null == authentication.getPrincipal()) {
             throw new AccessDeniedException("Пользователь не авторизован");
         }
         return (User) authentication.getPrincipal();
@@ -109,7 +109,7 @@ public class RentalService {
         if (rentalRepository.findActiveRentalByUserId(user.getId()).isPresent()) {
             throw new BusinessException("У пользователя уже есть активная поездка");
         }
-        if (scooter.getScooterStatus() == ScooterStatus.RENTED) {
+        if (ScooterStatus.RENTED == scooter.getScooterStatus()) {
             throw new BusinessException("Самокат уже занят");
         }
     }
@@ -118,7 +118,7 @@ public class RentalService {
         BigDecimal pricePerMinute = scooter.getScooterModel().getPricePerMinute();
         BigDecimal holdAmount = tariff.getPrice().add(pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES)));
 
-        Optional<UserSubscription> userSub = findActiveNonExpiredSubscription(userId);
+        Optional<UserSubscription> userSub = userSubscriptionService.findValidActiveSubscription(userId);
         if (userSub.isPresent() && userSub.get().getSubscription().getIsFreeStart()) {
             return pricePerMinute.multiply(BigDecimal.valueOf(DEFAULT_HOLD_MINUTES));
         }
@@ -138,14 +138,15 @@ public class RentalService {
     }
 
     private PromoCode findValidPromoCode(String promoCodeRaw) {
-        if (promoCodeRaw == null || promoCodeRaw.isBlank()) {
+        if (null == promoCodeRaw || promoCodeRaw.isBlank()) {
+            log.info("Промокод не предоставлен, пропуск валидации");
             return null;
         }
 
         PromoCode promoCode = promoCodeRepository.findByCode(promoCodeRaw)
                 .orElseThrow(() -> new ResourceNotFoundException("Промокод '" + promoCodeRaw + "' не найден"));
 
-        if (!promoCode.getIsActive() || (promoCode.getEndDate() != null && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
+        if (!promoCode.getIsActive() || (null != promoCode.getEndDate() && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
             throw new BusinessException("Промокод недействителен или истек");
         }
         return promoCode;
@@ -195,8 +196,9 @@ public class RentalService {
         BigDecimal tariffPrice = rental.getTariff().getPrice();
         BigDecimal effectiveDuration = BigDecimal.valueOf(durationMinutes);
 
-        Optional<UserSubscription> userSubOpt = findActiveNonExpiredSubscription(rental.getUser().getId());
+        Optional<UserSubscription> userSubOpt = userSubscriptionService.findValidActiveSubscription(rental.getUser().getId());
         if (userSubOpt.isEmpty()) {
+            log.info("Нет активного абонемента для пользователя ID={}, используется стандартный тариф", rental.getUser().getId());
             return new PricingContext(tariffPrice, effectiveDuration);
         }
 
@@ -209,6 +211,7 @@ public class RentalService {
 
     private BigDecimal calculateTariffPriceWithSubscriptionDiscount(BigDecimal tariffPrice, UserSubscription userSub) {
         if (userSub.getSubscription().getIsFreeStart()) {
+            log.info("Применение скидки на бесплатный старт от абонемента ID={}", userSub.getSubscription().getId());
             return BigDecimal.ZERO;
         }
         return tariffPrice;
@@ -217,22 +220,28 @@ public class RentalService {
     private BigDecimal calculateEffectiveDurationAfterIncludedMinutes(long durationMinutes, UserSubscription userSub) {
         int availableMin = userSub.getRemainingMinutes();
         if (availableMin <= 0) {
+            log.info("В абонементе ID={} не осталось минут, полная длительность {} мин подлежит оплате", 
+                    userSub.getSubscription().getId(), durationMinutes);
             return BigDecimal.valueOf(durationMinutes);
         }
 
         if (availableMin >= durationMinutes) {
+            log.info("Все {} минут покрыты абонементом ID={}", durationMinutes, userSub.getSubscription().getId());
             userSub.setRemainingMinutes(availableMin - (int) durationMinutes);
-            userSubscriptionRepository.update(userSub);
+            userSubscriptionService.updateSubscription(userSub);
             return BigDecimal.ZERO;
         }
 
+        log.info("Частичное покрытие: {} минут из абонемента ID={}, оставшиеся {} минут подлежат оплате", 
+                availableMin, userSub.getSubscription().getId(), durationMinutes - availableMin);
         userSub.setRemainingMinutes(0);
-        userSubscriptionRepository.update(userSub);
+        userSubscriptionService.updateSubscription(userSub);
         return BigDecimal.valueOf(durationMinutes - availableMin);
     }
 
     private BigDecimal applyPromoCodeDiscount(BigDecimal totalPrice, PromoCode promoCode) {
-        if (promoCode == null) {
+        if (null == promoCode) {
+            log.info("К поездке не применен промокод");
             return totalPrice;
         }
         BigDecimal discount = BigDecimal.valueOf(promoCode.getDiscount())
@@ -271,7 +280,7 @@ public class RentalService {
         scooter.setRentalPoint(nearestPoint); // привязываем самокат к новой точке
         scooter.setBatteryLevel(dto.getBatteryLevel());
 
-        if (scooter.getMileage() == null) {
+        if (null == scooter.getMileage()) {
             scooter.setMileage(BigDecimal.ZERO);
         }
         scooter.setMileage(scooter.getMileage().add(dto.getDistance()));
@@ -293,22 +302,6 @@ public class RentalService {
         log.info("Получена история аренды для самоката с ID={}. Количество записей: {}", scooterId, rentals.size());
 
         return rentalMapper.toAdminDtos(rentals);
-    }
-
-    private Optional<UserSubscription> findActiveNonExpiredSubscription(Long userId) {
-        Optional<UserSubscription> userSubscriptionOptional = userSubscriptionRepository.findActiveByUserId(userId);
-
-        if (userSubscriptionOptional.isPresent()) {
-            UserSubscription userSubscription = userSubscriptionOptional.get();
-            if (userSubscription.getEndDate().isBefore(LocalDateTime.now())) {
-                log.info("Срок действия абонемента ID={} для пользователя ID={} истек. Деактивация.",
-                        userSubscription.getId(), userId);
-                userSubscription.setIsActive(false);
-                userSubscriptionRepository.update(userSubscription);
-                return Optional.empty();
-            }
-        }
-        return userSubscriptionOptional;
     }
 
     private record PricingContext(BigDecimal tariffPrice, BigDecimal effectiveDuration) {

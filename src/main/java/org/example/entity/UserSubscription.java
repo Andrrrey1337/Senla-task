@@ -12,10 +12,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"user", "subscription"})
 public class UserSubscription {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_subscriptions_seq")
     @SequenceGenerator(name = "user_subscriptions_seq", sequenceName = "user_subscriptions_id_seq", allocationSize = 50)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

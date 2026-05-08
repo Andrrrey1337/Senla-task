@@ -68,7 +68,7 @@ public class UserService {
     }
 
     public UserResponseDto addBalance(Long userId, BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        if (BigDecimal.ZERO.compareTo(amount) >= 0) {
             throw new BusinessException("Сумма пополнения должна быть больше нуля");
         }
         User user = findEntityById(userId);
@@ -82,15 +82,18 @@ public class UserService {
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
         User user = findEntityById(userId);
 
-        if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername())
+        if (null != userUpdateDto.getUsername() && !userUpdateDto.getUsername().equals(user.getUsername())
                 && userRepository.findByUsername(userUpdateDto.getUsername()).isPresent()) {
             throw new BusinessException("Пользователь с таким именем '" + userUpdateDto.getUsername() + "' уже существует");
         }
 
         userMapper.updateEntity(userUpdateDto, user);
 
-        if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isBlank()) {
+        if (null != userUpdateDto.getPassword() && !userUpdateDto.getPassword().isBlank()) {
+            log.info("Обновление пароля для пользователя ID={}", userId);
             user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+        } else {
+            log.info("Новый пароль не предоставлен для пользователя ID={}, пропуск обновления пароля", userId);
         }
 
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());

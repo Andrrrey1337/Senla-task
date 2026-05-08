@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RentalPointService {
     private final RentalPointRepository rentalPointRepository;
-    private final ScooterRepository scooterRepository;
+private final ScooterRepository scooterRepository;
     private final RentalPointMapper rentalPointMapper;
     private final ScooterMapper scooterMapper;
 
@@ -55,7 +55,7 @@ public class RentalPointService {
     public RentalPointResponseDto updateRentalPoint(Long id, RentalPointUpdateDto dto) {
         RentalPoint rentalPoint = findRentalPointById(id);
         
-        if (dto.getName() != null && !dto.getName().equals(rentalPoint.getName())) {
+        if (null != dto.getName() && !dto.getName().equals(rentalPoint.getName())) {
             validateNameUniqueness(dto.getName());
         }
         
@@ -69,7 +69,8 @@ public class RentalPointService {
     // реализация иерархии точек
     private void processHierarchy(RentalPoint rentalPoint, Long parentId) {
         RentalPoint parent = resolveParentPoint(rentalPoint, parentId);
-        if (parent == null) {
+        if (null == parent) {
+            log.info("Родительская точка не указана для '{}', валидация как корневой точки", rentalPoint.getName());
             validateRootPoint(rentalPoint);
             validateCoordinates(rentalPoint, 1);
             return;
@@ -81,15 +82,15 @@ public class RentalPointService {
     }
 
     private RentalPoint resolveParentPoint(RentalPoint rentalPoint, Long parentId) {
-        if (parentId != null) {
+        if (null != parentId) {
             return findRentalPointById(parentId);
         }
         return rentalPoint.getParent();
     }
 
     private void validateCoordinates(RentalPoint point, int level) {
-        if (level == 3) {
-            if (point.getLatitude() == null || point.getLongitude() == null) {
+        if (3 == level) {
+            if (null == point.getLatitude() || null == point.getLongitude()) {
                 throw new BusinessException("Для точки уровня 'Дом' широта и долгота обязательны");
             }
         }
@@ -107,9 +108,11 @@ public class RentalPointService {
     // заполнение данных (если не указаны) из родителя
     private void applyInheritance(RentalPoint child, RentalPoint parent) {
         if (isFieldBlank(child.getCity())) {
+            log.info("Наследование города '{}' от родительской точки ID={}", parent.getCity(), parent.getId());
             child.setCity(parent.getCity());
         }
         if (isFieldBlank(child.getStreet())) {
+            log.info("Наследование улицы '{}' от родительской точки ID={}", parent.getStreet(), parent.getId());
             child.setStreet(parent.getStreet());
         }
     }
@@ -132,17 +135,17 @@ public class RentalPointService {
 
     // если у точки нет родителя, она должна быть городом
     private void validateRootPoint(RentalPoint point) {
-        if (getAddressLevel(point) != 1) {
+        if (1 != getAddressLevel(point)) {
             throw new BusinessException("Точка без родителя должна быть уровня 'Город' (указан только город)");
         }
     }
 
     // проверка данных точки с данными родителя
     private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
-        if (parent.getCity() != null && !child.getCity().equalsIgnoreCase(parent.getCity())) {
+        if (null != parent.getCity() && !child.getCity().equalsIgnoreCase(parent.getCity())) {
             throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
         }
-        if (parent.getStreet() != null && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
+        if (null != parent.getStreet() && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
             throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
         }
     }
@@ -162,7 +165,7 @@ public class RentalPointService {
     }
 
     private boolean isFieldBlank(String field) {
-        return field == null || field.isBlank();
+        return null == field || field.isBlank();
     }
 
     // проверка дублирования имен точек
@@ -174,7 +177,10 @@ public class RentalPointService {
 
     @Transactional(readOnly = true)
     public RentalPoint findRentalPointById(Long id) {
-        if (id == null) return null;
+        if (null == id) {
+            log.info("Вызван findRentalPointById с null ID, возвращаем null");
+            return null;
+        }
         return rentalPointRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + id + " не найдена"));
     }
@@ -257,13 +263,13 @@ public class RentalPointService {
 
     private List<Scooter> getAvailableScooters(List<Scooter> scooters) {
         return scooters.stream()
-                .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
+                .filter(s -> ScooterStatus.AVAILABLE == s.getScooterStatus())
                 .toList();
     }
 
     private long countRentedScooters(List<Scooter> scooters) {
         return scooters.stream()
-                .filter(s -> s.getScooterStatus() == ScooterStatus.RENTED)
+                .filter(s -> ScooterStatus.RENTED == s.getScooterStatus())
                 .count();
     }
 

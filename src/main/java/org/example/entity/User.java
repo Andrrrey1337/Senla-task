@@ -17,12 +17,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "password")
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_seq")
     @SequenceGenerator(name = "users_seq", sequenceName = "users_id_seq", allocationSize = 50)
     private Long id;
 
+    @EqualsAndHashCode.Include
     @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
 

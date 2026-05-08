@@ -12,10 +12,13 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "parent")
 public class RentalPoint {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rental_points_seq")
     @SequenceGenerator(name = "rental_points_seq", sequenceName = "rental_points_id_seq", allocationSize = 50)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "name", nullable = false, length = 50)
