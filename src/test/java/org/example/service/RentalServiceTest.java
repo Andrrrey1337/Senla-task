@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.RentalServiceImpl;
+
 import org.example.dto.rental.FinishRentalDto;
 import org.example.dto.rental.StartRentalDto;
 import org.example.dto.rental.RentalResponseDto;
@@ -42,7 +44,7 @@ class RentalServiceTest {
     @Mock private RentalMapper rentalMapper;
 
     @InjectMocks
-    private RentalService rentalService;
+    private RentalServiceImpl rentalService;
 
     private User user;
     private Scooter scooter;

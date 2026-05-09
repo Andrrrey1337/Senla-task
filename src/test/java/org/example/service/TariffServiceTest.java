@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.TariffServiceImpl;
+
 import org.example.dto.tariff.TariffUpdateDto;
 import org.example.dto.tariff.TariffResponseDto;
 import org.example.dto.tariff.TariffCreateDto;
@@ -30,7 +32,7 @@ class TariffServiceTest {
     @Mock private TariffMapper tariffMapper;
 
     @InjectMocks
-    private TariffService tariffService;
+    private TariffServiceImpl tariffService;
 
     private Tariff testTariff;
     private TariffResponseDto tariffResponseDto;

@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.SubscriptionServiceImpl;
+
 import org.example.dto.subscription.SubscriptionUpdateDto;
 import org.example.dto.subscription.SubscriptionCreateDto;
 import org.example.dto.subscription.SubscriptionResponseDto;
@@ -30,7 +32,7 @@ class SubscriptionServiceTest {
     @Mock private SubscriptionMapper subscriptionMapper;
 
     @InjectMocks
-    private SubscriptionService subscriptionService;
+    private SubscriptionServiceImpl subscriptionService;
 
     private Subscription subscription;
     private SubscriptionResponseDto responseDto;

@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.AuthServiceImpl;
+
 import org.example.dto.auth.JwtRequest;
 import org.example.dto.auth.JwtResponse;
 import org.example.security.JwtService;
@@ -28,7 +30,7 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     private JwtRequest jwtRequest;
     private UserDetails userDetails;

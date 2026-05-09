@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.UserServiceImpl;
+
 import org.example.dto.user.UserAdminUpdateDto;
 import org.example.dto.user.UserUpdateDto;
 import org.example.dto.user.UserCreateDto;
@@ -34,7 +36,7 @@ class UserServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
-    private UserService userService;
+    private UserServiceImpl userService;
 
     private User user;
     private UserResponseDto responseDto;

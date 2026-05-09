@@ -16,201 +16,34 @@ import org.example.mapper.RentalPointMapper;
 import org.example.repository.RentalPointRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
-@Transactional
-@Slf4j
-@RequiredArgsConstructor
-public class RentalPointService {
-    private final RentalPointRepository rentalPointRepository;
-    private final RentalPointMapper rentalPointMapper;
+public interface RentalPointService {
+    RentalPointResponseDto createRentalPoint(RentalPointCreateDto dto);
 
-    public RentalPointResponseDto createRentalPoint(RentalPointCreateDto dto) {
-        validateNameUniqueness(dto.getName());
-        
-        RentalPoint rentalPoint = rentalPointMapper.toEntity(dto);
-        processHierarchy(rentalPoint, dto.getParentId());
+    List<RentalPointResponseDto> createRentalPointsBatch(List<RentalPointCreateDto> dtos);
 
-        rentalPoint = rentalPointRepository.create(rentalPoint);
-        log.info("Успешно создана новая точка проката: ID={}, название='{}'", rentalPoint.getId(), rentalPoint.getName());
-
-        return rentalPointMapper.toDto(rentalPoint);
-    }
-
-    public List<RentalPointResponseDto> createRentalPointsBatch(List<RentalPointCreateDto> dtos) {
-        log.info("Начато пакетное создание точек проката. Количество: {}", dtos.size());
-        List<RentalPointResponseDto> savedPoints = dtos.stream().map(this::createRentalPoint).toList();
-        log.info("Успешно завершено пакетное создание {} точек проката", savedPoints.size());
-        return savedPoints;
-    }
-
-    public RentalPointResponseDto updateRentalPoint(Long id, RentalPointUpdateDto dto) {
-        RentalPoint rentalPoint = findRentalPointById(id);
-        
-        if (null != dto.getName() && !dto.getName().equals(rentalPoint.getName())) {
-            validateNameUniqueness(dto.getName());
-        }
-        
-        rentalPointMapper.updateEntity(dto, rentalPoint);
-        processHierarchy(rentalPoint, dto.getParentId());
-
-        log.info("Данные точки проката с ID {} успешно обновлены", rentalPoint.getId());
-        return rentalPointMapper.toDto(rentalPoint);
-    }
-
-    // реализация иерархии точек
-    private void processHierarchy(RentalPoint rentalPoint, Long parentId) {
-        RentalPoint parent = resolveParentPoint(rentalPoint, parentId);
-        if (null == parent) {
-            log.info("Родительская точка не указана для '{}', валидация как корневой точки", rentalPoint.getName());
-            validateRootPoint(rentalPoint);
-            validateCoordinates(rentalPoint, 1);
-            return;
-        }
-
-        validateAndApplyHierarchy(rentalPoint, parent);
-        int level = getAddressLevel(rentalPoint);
-        validateCoordinates(rentalPoint, level);
-    }
-
-    private RentalPoint resolveParentPoint(RentalPoint rentalPoint, Long parentId) {
-        if (null != parentId) {
-            return findRentalPointById(parentId);
-        }
-        return rentalPoint.getParent();
-    }
-
-    private void validateCoordinates(RentalPoint point, int level) {
-        if (3 == level) {
-            if (null == point.getLatitude() || null == point.getLongitude()) {
-                throw new BusinessException("Для точки уровня 'Дом' широта и долгота обязательны");
-            }
-        }
-    }
-
-    // проверка связи родителя и ребенка
-    private void validateAndApplyHierarchy(RentalPoint child, RentalPoint parent) {
-        applyInheritance(child, parent);
-        validateAddressLevels(child, parent);
-        validateAddressConsistency(child, parent);
-
-        child.setParent(parent);
-    }
-
-    // заполнение данных (если не указаны) из родителя
-    private void applyInheritance(RentalPoint child, RentalPoint parent) {
-        if (isFieldBlank(child.getCity())) {
-            log.info("Наследование города '{}' от родительской точки ID={}", parent.getCity(), parent.getId());
-            child.setCity(parent.getCity());
-        }
-        if (isFieldBlank(child.getStreet())) {
-            log.info("Наследование улицы '{}' от родительской точки ID={}", parent.getStreet(), parent.getId());
-            child.setStreet(parent.getStreet());
-        }
-    }
-
-    // проверка последовательности уровней
-    private void validateAddressLevels(RentalPoint child, RentalPoint parent) {
-        int childLevel = getAddressLevel(child);
-        int parentLevel = getAddressLevel(parent);
-
-        if (childLevel == -1 || parentLevel == -1) {
-            throw new BusinessException("Нарушена целостность адреса");
-        }
-
-        if (childLevel != parentLevel + 1) {
-            throw new BusinessException(String.format(
-                    "Нарушена последовательность: уровень %d не может быть дочерним для %d. " +
-                    "Ожидается строго: Город -> Улица -> Дом", childLevel, parentLevel));
-        }
-    }
-
-    // если у точки нет родителя, она должна быть городом
-    private void validateRootPoint(RentalPoint point) {
-        if (1 != getAddressLevel(point)) {
-            throw new BusinessException("Точка без родителя должна быть уровня 'Город' (указан только город)");
-        }
-    }
+    RentalPointResponseDto updateRentalPoint(Long id, RentalPointUpdateDto dto);
 
     // определяет вес адреса
-    @Transactional(readOnly = true)
-    public int getAddressLevel(RentalPoint point) {
-        boolean hasCity = !isFieldBlank(point.getCity());
-        boolean hasStreet = !isFieldBlank(point.getStreet());
-        boolean hasHouse = !isFieldBlank(point.getHouseNumber());
+    int getAddressLevel(RentalPoint point);
 
-        if (hasHouse) return (hasCity && hasStreet) ? 3 : -1;
-        if (hasStreet) return hasCity ? 2 : -1;
-        if (hasCity) return 1;
+    RentalPoint findRentalPointById(Long id);
 
-        return 0;
-    }
+    RentalPoint findRentalPointByName(String name);
 
-    // проверка данных точки с данными родителя
-    private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
-        if (null != parent.getCity() && !child.getCity().equalsIgnoreCase(parent.getCity())) {
-            throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
-        }
-        if (null != parent.getStreet() && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
-            throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
-        }
-    }
+    List<RentalPointResponseDto> findAllRentalPoints();
 
-    private boolean isFieldBlank(String field) {
-        return null == field || field.isBlank();
-    }
+    Optional<RentalPoint> findNearestValidParkingPoint(BigDecimal latitude, BigDecimal longitude, double radius);
 
-    // проверка дублирования имен точек
-    private void validateNameUniqueness(String name) {
-        if (rentalPointRepository.findRentalPointByName(name).isPresent()) {
-            throw new BusinessException("Точка проката с названием " + name + " уже существует");
-        }
-    }
+    void deleteById(Long id);
 
-    @Transactional(readOnly = true)
-    public RentalPoint findRentalPointById(Long id) {
-        if (null == id) {
-            log.info("Вызван findRentalPointById с null ID, возвращаем null");
-            return null;
-        }
-        return rentalPointRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + id + " не найдена"));
-    }
+    RentalPointResponseDto getRentalPointDtoById(Long id);
 
-    @Transactional(readOnly = true)
-    public RentalPoint findRentalPointByName(String name) {
-        return rentalPointRepository.findRentalPointByName(name)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с названием " + name + " не найдена"));
-    }
+    RentalPointResponseDto getRentalPointDtoByName(String name);
 
-    @Transactional(readOnly = true)
-    public List<RentalPointResponseDto> findAllRentalPoints() {
-        return rentalPointMapper.toDtos(rentalPointRepository.findAll());
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<RentalPoint> findNearestValidParkingPoint(BigDecimal latitude, BigDecimal longitude, double radius) {
-        return rentalPointRepository.findNearestValidParkingPoint(latitude, longitude, radius);
-    }
-
-    public void deleteById(Long id) {
-        rentalPointRepository.deleteById(id);
-        log.info("Точка проката с ID {} успешно удалена", id);
-    }
-
-    @Transactional(readOnly = true)
-    public RentalPointResponseDto getRentalPointDtoById(Long id) {
-        return rentalPointMapper.toDto(findRentalPointById(id));
-    }
-
-    @Transactional(readOnly = true)
-    public RentalPointResponseDto getRentalPointDtoByName(String name) {
-        return rentalPointMapper.toDto(findRentalPointByName(name));
-    }
 }

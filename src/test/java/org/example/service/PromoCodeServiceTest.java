@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.PromoCodeServiceImpl;
+
 import org.example.dto.promocode.PromoCodeUpdateDto;
 import org.example.dto.promocode.PromoCodeCreateDto;
 import org.example.dto.promocode.PromoCodeResponseDto;
@@ -32,7 +34,7 @@ class PromoCodeServiceTest {
     @Mock private PromoCodeMapper promoCodeMapper;
 
     @InjectMocks
-    private PromoCodeService promoCodeService;
+    private PromoCodeServiceImpl promoCodeService;
 
     private PromoCode promoCode;
     private PromoCodeResponseDto promoCodeResponseDto;

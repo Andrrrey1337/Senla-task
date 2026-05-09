@@ -12,86 +12,23 @@ import org.example.mapper.TariffMapper;
 import org.example.repository.TariffRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
-@Service
-@Transactional
-@Slf4j
-@RequiredArgsConstructor
-public class TariffService {
-    private final TariffRepository tariffRepository;
-    private final TariffMapper tariffMapper;
+public interface TariffService {
+    TariffResponseDto createTariff(TariffCreateDto dto);
 
-    public TariffResponseDto createTariff(TariffCreateDto dto) {
-        Tariff tariff = tariffMapper.toEntity(dto);
-        if (tariffRepository.findByName(tariff.getName()).isPresent()) {
-            throw new BusinessException("Тариф с названием '" + tariff.getName() + "' уже существует");
-        }
-        tariff = tariffRepository.create(tariff);
+    Tariff findTariffById(Long id);
 
-        log.info("Успешно создан новый тариф: ID={}, название='{}', цена={}",
-                tariff.getId(), tariff.getName(), tariff.getPrice());
+    Tariff findTariffByName(String name);
 
-        return tariffMapper.toDto(tariff);
-    }
+    List<TariffResponseDto> findAllTariffs();
 
-    @Transactional(readOnly = true)
-    public Tariff findTariffById(Long id) {
-        Tariff tariff = tariffRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Тариф с ID " + id + " не найден"));
+    TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto);
 
-        log.info("Успешно найден тариф с ID: {}", id);
-        return tariff;
-    }
+    TariffResponseDto getTariffDtoById(Long id);
 
-    @Transactional(readOnly = true)
-    public Tariff findTariffByName(String name) {
-        Tariff tariff = tariffRepository.findByName(name)
-                .orElseThrow(() -> new ResourceNotFoundException("Тариф с названием '" + name + "' не найден"));
+    TariffResponseDto getTariffDtoByName(String name);
 
-        log.info("Успешно найден тариф с названием: '{}'", name);
-        return tariff;
-    }
+    void deleteTariffById(Long id);
 
-    @Transactional(readOnly = true)
-    public List<TariffResponseDto> findAllTariffs() {
-        List<Tariff> tariffs = tariffRepository.findAll();
-
-        log.info("Получен список всех тарифов. Количество записей: {}", tariffs.size());
-        return tariffMapper.toDtos(tariffs);
-    }
-
-    public TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto) {
-        Tariff existTariff = findTariffById(id);
-
-        if (null != tariffDto.getName() && !tariffDto.getName().equals(existTariff.getName())) {
-            log.info("Обновление названия тарифа с '{}' на '{}'", existTariff.getName(), tariffDto.getName());
-            if (tariffRepository.findByName(tariffDto.getName()).isPresent()) {
-                throw new BusinessException("Тариф с названием '" + tariffDto.getName() + "' уже существует");
-            }
-        } else {
-            log.info("Название тарифа не предоставлено или не изменилось, пропуск валидации имени");
-        }
-
-        tariffMapper.updateEntity(tariffDto, existTariff);
-        log.info("Данные тарифа с ID {} успешно обновлены", existTariff.getId());
-
-        return tariffMapper.toDto(existTariff);
-    }
-
-    @Transactional(readOnly = true)
-    public TariffResponseDto getTariffDtoById(Long id) {
-        return tariffMapper.toDto(findTariffById(id));
-    }
-
-    @Transactional(readOnly = true)
-    public TariffResponseDto getTariffDtoByName(String name) {
-        return tariffMapper.toDto(findTariffByName(name));
-    }
-
-    public void deleteTariffById(Long id) {
-        tariffRepository.deleteById(id);
-        log.info("Тариф с ID {} успешно удален", id);
-    }
 }

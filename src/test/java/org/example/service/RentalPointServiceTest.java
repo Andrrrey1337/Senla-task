@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.RentalPointServiceImpl;
+
 import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.dto.point.RentalPointResponseDto;
@@ -31,7 +33,7 @@ class RentalPointServiceTest {
     @Mock private RentalPointMapper rentalPointMapper;
 
     @InjectMocks
-    private RentalPointService rentalPointService;
+    private RentalPointServiceImpl rentalPointService;
 
     private RentalPoint rentalPoint;
     private RentalPointResponseDto rentalPointResponseDto;

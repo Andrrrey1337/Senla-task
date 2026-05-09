@@ -11,54 +11,19 @@ import org.example.mapper.SubscriptionMapper;
 import org.example.repository.SubscriptionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
-@Service
-@Transactional
-@Slf4j
-@RequiredArgsConstructor
-public class SubscriptionService {
-    private final SubscriptionRepository subscriptionRepository;
-    private final SubscriptionMapper subscriptionMapper;
+public interface SubscriptionService {
+    SubscriptionResponseDto createSubscription(SubscriptionCreateDto dto);
 
-    public SubscriptionResponseDto createSubscription(SubscriptionCreateDto dto) {
-        Subscription subscription = subscriptionMapper.toEntity(dto);
-        subscription = subscriptionRepository.create(subscription);
-        log.info("Создан новый абонемент: {}", subscription.getName());
-        return subscriptionMapper.toDto(subscription);
-    }
+    Subscription findSubscriptionById(Long id);
 
-    public Subscription findSubscriptionById(Long id) {
-        Subscription subscription = subscriptionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Абонемент с ID " + id + " не найден"));
+    List<SubscriptionResponseDto> findAllSubscriptions();
 
-        log.info("Успешно найден абонемент с ID: {}", id);
-        return subscription;
-    }
+    SubscriptionResponseDto updateSubscription(Long id, SubscriptionUpdateDto subscriptionUpdateDto);
 
-    public List<SubscriptionResponseDto> findAllSubscriptions() {
-        List<Subscription> subscriptions = subscriptionRepository.findAll();
-        log.info("Получен список всех абонементов. Количество: {}", subscriptions.size());
-        return subscriptionMapper.toDtos(subscriptions);
-    }
+    SubscriptionResponseDto getSubscriptionDtoById(Long id);
 
-    public SubscriptionResponseDto updateSubscription(Long id, SubscriptionUpdateDto subscriptionUpdateDto) {
-        Subscription subscription = findSubscriptionById(id);
+    void deleteSubscription(Long id);
 
-        subscriptionMapper.updateSubscription(subscriptionUpdateDto, subscription);
-        log.info("Данные абонемента с ID {} успешно обновлены", id);
-
-        return subscriptionMapper.toDto(subscription);
-    }
-
-    @Transactional(readOnly = true)
-    public SubscriptionResponseDto getSubscriptionDtoById(Long id) {
-        return subscriptionMapper.toDto(findSubscriptionById(id));
-    }
-
-    public void deleteSubscription(Long id){
-        subscriptionRepository.deleteById(id);
-        log.info("Абонемент с ID {} успешно удален", id);
-    }
 }

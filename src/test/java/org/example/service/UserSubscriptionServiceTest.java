@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.UserSubscriptionServiceImpl;
+
 import org.example.dto.subscription.UserSubscriptionResponseDto;
 import org.example.entity.Subscription;
 import org.example.entity.User;
@@ -35,7 +37,7 @@ class UserSubscriptionServiceTest {
     @Mock private UserSubscriptionMapper userSubscriptionMapper;
 
     @InjectMocks
-    private UserSubscriptionService userSubscriptionService;
+    private UserSubscriptionServiceImpl userSubscriptionService;
 
     private User user;
     private Subscription subscription;

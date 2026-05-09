@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.service.impl.ScooterModelServiceImpl;
+
 import org.example.dto.scooterModel.ScooterModelUpdateDto;
 import org.example.dto.scooterModel.ScooterModelCreateDto;
 import org.example.dto.scooterModel.ScooterModelResponseDto;
@@ -32,7 +34,7 @@ class ScooterModelServiceTest {
     @Mock private ScooterModelMapper scooterModelMapper;
 
     @InjectMocks
-    private ScooterModelService scooterModelService;
+    private ScooterModelServiceImpl scooterModelService;
 
     private ScooterModel scooterModel;
     private ScooterModelResponseDto scooterModelResponseDto;
