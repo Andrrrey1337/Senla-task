@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
@@ -31,8 +32,11 @@ public class ScooterModelServiceImpl implements ScooterModelService {
 
     public ScooterModelResponseDto createScooterModel(ScooterModelCreateDto dto) {
         ScooterModel scooterModel = scooterModelMapper.toEntity(dto);
-        if (scooterModelRepository.findByName(scooterModel.getName()).isPresent()) {
-            throw new BusinessException("Модель самоката с названием '" + scooterModel.getName() + "' уже существует");
+        String modelName = scooterModel.getName();
+
+        Optional<ScooterModel> existingModel = scooterModelRepository.findByName(modelName);
+        if (existingModel.isPresent()) {
+            throw new BusinessException("Модель самоката с названием '" + modelName + "' уже существует");
         }
 
         ScooterModel scooterModelNew = scooterModelRepository.create(scooterModel);
@@ -69,12 +73,14 @@ public class ScooterModelServiceImpl implements ScooterModelService {
 
     public ScooterModelResponseDto updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = findScooterModelById(id);
+        String newModelName = scooterModelUpdateDto.getName();
 
-        if (isNotBlank(scooterModelUpdateDto.getName()) && notEqual(scooterModelUpdateDto.getName(), scooterModel.getName())) {
-            log.info("Обновление названия модели самоката с '{}' на '{}'", scooterModel.getName(), scooterModelUpdateDto.getName());
-            if (scooterModelRepository.findByName(scooterModelUpdateDto.getName()).isPresent()) {
-                throw new BusinessException("Модель самоката с названием '" + scooterModelUpdateDto.getName() + "' уже существует");
+        if (isNotBlank(newModelName) && notEqual(newModelName, scooterModel.getName())) {
+            Optional<ScooterModel> existingModel = scooterModelRepository.findByName(newModelName);
+            if (existingModel.isPresent()) {
+                throw new BusinessException("Модель самоката с названием '" + newModelName + "' уже существует");
             }
+            log.info("Обновление названия модели самоката с '{}' на '{}'", scooterModel.getName(), newModelName);
         } else {
             log.info("Название модели самоката не предоставлено или не изменилось, пропуск валидации имени");
         }
@@ -91,3 +97,4 @@ public class ScooterModelServiceImpl implements ScooterModelService {
         log.info("Модель самоката с ID {} успешно удалена", id);
     }
 }
+

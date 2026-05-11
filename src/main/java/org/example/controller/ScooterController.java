@@ -8,6 +8,7 @@ import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterResponseDto;
 import org.example.dto.scooter.ScooterUpdateDto;
+import org.example.entity.Scooter;
 import org.example.service.ScooterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,13 +28,15 @@ public class ScooterController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Добавить новый самокат", description = "Доступно только администраторам")
     public ResponseEntity<ScooterAdminResponseDto> createScooter(@Valid @RequestBody ScooterCreateDto scooterCreateDto) {
-        return new  ResponseEntity<>(scooterService.createScooter(scooterCreateDto), HttpStatus.CREATED);
+        ScooterAdminResponseDto scooter = scooterService.createScooter(scooterCreateDto);
+        return new ResponseEntity<>(scooter, HttpStatus.CREATED);
     }
 
     @PostMapping("/batch")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Добавить несколько самокатов", description = "Пакетное добавление новых самокатов")
-    public ResponseEntity<List<ScooterAdminResponseDto>> createScootersBatch(@Valid @RequestBody List<ScooterCreateDto> dtos) {
+    public ResponseEntity<List<ScooterAdminResponseDto>> createScootersBatch(
+            @Valid @RequestBody List<ScooterCreateDto> dtos) {
         List<ScooterAdminResponseDto> scooters = scooterService.createScootersBatch(dtos);
         return new ResponseEntity<>(scooters, HttpStatus.CREATED);
     }
@@ -73,7 +76,9 @@ public class ScooterController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить данные самоката (админ)", description = "Изменение статуса, координат, уровня заряда или точки привязки")
-    public ResponseEntity<ScooterAdminResponseDto> updateScooter(@PathVariable Long id, @Valid @RequestBody ScooterUpdateDto scooterUpdateDto) {
+    public ResponseEntity<ScooterAdminResponseDto> updateScooter(
+            @PathVariable Long id, 
+            @Valid @RequestBody ScooterUpdateDto scooterUpdateDto) {
         ScooterAdminResponseDto scooter = scooterService.updateScooter(id,  scooterUpdateDto);
         return ResponseEntity.ok(scooter);
     }

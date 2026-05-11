@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
@@ -36,7 +37,8 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto registerUser(UserCreateDto dto)  {
         User user = userMapper.toEntity(dto);
         String username = user.getUsername();
-        if (userRepository.findByUsername(username).isPresent()) {
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        if (existingUser.isPresent()) {
             throw new BusinessException("Пользователь с именем " + username + "' уже существует");
         }
 
@@ -78,26 +80,33 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("Сумма пополнения должна быть больше нуля");
         }
         User user = findEntityById(userId);
-        user.setBalance(user.getBalance().add(amount));
+        
+        BigDecimal currentBalance = user.getBalance();
+        BigDecimal newBalance = currentBalance.add(amount);
+        user.setBalance(newBalance);
 
-        log.info("Баланс пользователя с ID {} успешно пополнен на {}. Текущий баланс: {}", userId, amount, user.getBalance());
+        log.info("Баланс пользователя с ID {} успешно пополнен на {}. Текущий баланс: {}", 
+                userId, amount, user.getBalance());
 
         return userMapper.toDto(user);
     }
 
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
         User user = findEntityById(userId);
+        String name = userUpdateDto.getUsername();
 
-        if (isNotBlank(userUpdateDto.getUsername()) && notEqual(userUpdateDto.getUsername(), user.getUsername())
-                && userRepository.findByUsername(userUpdateDto.getUsername()).isPresent()) {
-            throw new BusinessException("Пользователь с таким именем '" + userUpdateDto.getUsername() + "' уже существует");
+        if (isNotBlank(name) && notEqual(name, user.getUsername())
+                && userRepository.findByUsername(name).isPresent()) {
+            throw new BusinessException("Пользователь с таким именем '" + name + "' уже существует");
         }
 
         userMapper.updateEntity(userUpdateDto, user);
 
-        if (isNotBlank(userUpdateDto.getPassword())) {
+        String password = userUpdateDto.getPassword();
+
+        if (isNotBlank(password)) {
             log.info("Обновление пароля для пользователя ID={}", userId);
-            user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+            user.setPassword(passwordEncoder.encode(password));
         } else {
             log.info("Новый пароль не предоставлен для пользователя ID={}, пропуск обновления пароля", userId);
         }
@@ -105,14 +114,14 @@ public class UserServiceImpl implements UserService {
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
 
         return userMapper.toDto(user);
-        }
+    }
 
-        public void update(User user) {
+    public void update(User user) {
         userRepository.update(user);
         log.info("Сущность пользователя с ID {} обновлена напрямую", user.getId());
-        }
+    }
 
-        public UserResponseDto updateAdminFields(Long userId, UserAdminUpdateDto dto) {
+    public UserResponseDto updateAdminFields(Long userId, UserAdminUpdateDto dto) {
 
         User user = findEntityById(userId);
 

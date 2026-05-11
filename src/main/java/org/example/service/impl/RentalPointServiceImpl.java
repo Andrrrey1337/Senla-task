@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -61,9 +62,10 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     public RentalPointResponseDto updateRentalPoint(Long id, RentalPointUpdateDto dto) {
         RentalPoint rentalPoint = findRentalPointById(id);
+        String name = dto.getName();
         
-        if (isNotBlank(dto.getName()) && notEqual(dto.getName(), rentalPoint.getName())) {
-            validateNameUniqueness(dto.getName());
+        if (isNotBlank(name) && notEqual(name, rentalPoint.getName())) {
+            validateNameUniqueness(name);
         }
         
         rentalPointMapper.updateEntity(dto, rentalPoint);
@@ -97,7 +99,7 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     private void validateCoordinates(RentalPoint point, int level) {
         if (3 == level) {
-            if (null == point.getLatitude() || null == point.getLongitude()) {
+            if (isNull(point.getLatitude()) || isNull(point.getLongitude())) {
                 throw new BusinessException("Для точки уровня 'Дом' широта и долгота обязательны");
             }
         }
@@ -163,10 +165,12 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     // проверка данных точки с данными родителя
     private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
-        if (parent.getCity() != null && !parent.getCity().equalsIgnoreCase(child.getCity())) {
+        String parentCity = parent.getCity();
+        String parentStreet = parent.getStreet();
+        if (nonNull(parentCity) && !parentCity.equalsIgnoreCase(child.getCity())) {
             throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
         }
-        if (parent.getStreet() != null && !parent.getStreet().equalsIgnoreCase(child.getStreet())) {
+        if (nonNull(parentStreet) && !parentStreet.equalsIgnoreCase(child.getStreet())) {
             throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
         }
     }
@@ -177,7 +181,8 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     // проверка дублирования имен точек
     private void validateNameUniqueness(String name) {
-        if (rentalPointRepository.findRentalPointByName(name).isPresent()) {
+        Optional<RentalPoint> existingPoint = rentalPointRepository.findRentalPointByName(name);
+        if (existingPoint.isPresent()) {
             throw new BusinessException("Точка проката с названием " + name + " уже существует");
         }
     }

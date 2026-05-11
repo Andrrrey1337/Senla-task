@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
@@ -31,10 +32,12 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
     public PromoCodeResponseDto createPromoCode(PromoCodeCreateDto dto){
         PromoCode promoCode = promoCodeMapper.toEntity(dto);
-        if (promoCodeRepository.findByCode(promoCode.getCode()).isPresent()){
-            throw new BusinessException("Промокод " + promoCode.getCode() + " уже существует");
+        String code = promoCode.getCode();
+        Optional<PromoCode> existingPromoCode = promoCodeRepository.findByCode(code);
+        if (existingPromoCode.isPresent()){
+            throw new BusinessException("Промокод " + code + " уже существует");
         }
-        log.info("Создан новый промокод: {}", promoCode.getCode());
+        log.info("Создан новый промокод: {}", code);
         return promoCodeMapper.toDto(promoCodeRepository.create(promoCode));
     }
 
@@ -69,12 +72,15 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
     public PromoCodeResponseDto updatePromoCode(Long id, PromoCodeUpdateDto promoCodeUpdateDto){
         PromoCode promoCode = findEntityById(id);
+        String newCode = promoCodeUpdateDto.getCode();
+        String oldCode = promoCode.getCode();
 
-        if (isNotBlank(promoCodeUpdateDto.getCode()) && notEqual(promoCodeUpdateDto.getCode(), promoCode.getCode())) {
-            log.info("Обновление промокода с '{}' на '{}'", promoCode.getCode(), promoCodeUpdateDto.getCode());
-            if (promoCodeRepository.findByCode(promoCodeUpdateDto.getCode()).isPresent()) {
-                throw new BusinessException("Промокод '" + promoCodeUpdateDto.getCode() + "' уже существует");
+        if (isNotBlank(newCode) && notEqual(newCode, oldCode)) {
+            Optional<PromoCode> existingPromoCode = promoCodeRepository.findByCode(newCode);
+            if (existingPromoCode.isPresent()) {
+                throw new BusinessException("Промокод '" + newCode + "' уже существует");
             }
+            log.info("Обновление промокода с '{}' на '{}'", oldCode, newCode);
         } else {
             log.info("Промокод не предоставлен или не изменился, пропуск валидации кода");
         }
@@ -85,3 +91,4 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         return promoCodeMapper.toDto(promoCode);
     }
 }
+

@@ -25,7 +25,8 @@ public class ScooterModelController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать новую модель самоката")
-    public ResponseEntity<ScooterModelResponseDto> createScooterModel(@Valid @RequestBody ScooterModelCreateDto scooterModelCreateDto) {
+    public ResponseEntity<ScooterModelResponseDto> createScooterModel(
+            @Valid @RequestBody ScooterModelCreateDto scooterModelCreateDto) {
         ScooterModelResponseDto scooterModel = scooterModelService.createScooterModel(scooterModelCreateDto);
         return new ResponseEntity<>(scooterModel, HttpStatus.CREATED);
     }
@@ -47,7 +48,9 @@ public class ScooterModelController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить характеристики модели")
-    public ResponseEntity<ScooterModelResponseDto> updateScooterModel(@PathVariable Long id, @Valid @RequestBody ScooterModelUpdateDto scooterModelUpdateDto) {
+    public ResponseEntity<ScooterModelResponseDto> updateScooterModel(
+            @PathVariable Long id, 
+            @Valid @RequestBody ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModelResponseDto scooterModel = scooterModelService.updateScooterModel(id, scooterModelUpdateDto);
         return ResponseEntity.ok(scooterModel);
     }

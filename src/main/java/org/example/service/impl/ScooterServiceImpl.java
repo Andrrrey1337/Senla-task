@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -54,9 +55,10 @@ public class ScooterServiceImpl implements ScooterService {
     public ScooterAdminResponseDto updateScooter(Long id, ScooterUpdateDto scooterDto) {
         Scooter scooter = findScooterById(id);
         scooterMapper.updateEntity(scooterDto, scooter);
+        Long pointId = scooterDto.getRentalPointId();
 
-        if (nonNull(scooterDto.getRentalPointId())) {
-            assignRentalPoint(scooter, scooterDto.getRentalPointId());
+        if (nonNull(pointId)) {
+            assignRentalPoint(scooter, pointId);
         } else {
             log.info("Новая точка проката не указана для самоката ID={}, пропуск перепривязки", id);
         }
@@ -80,14 +82,15 @@ public class ScooterServiceImpl implements ScooterService {
     private RentalPoint validateRentalPointForScooter(Long rentalPointId) {
         RentalPoint point = rentalPointService.findRentalPointById(rentalPointId);
 
-        if (3 != rentalPointService.getAddressLevel(point)) {
+        if (rentalPointService.getAddressLevel(point) != 3) {
             throw new BusinessException("Самокат можно привязать только к конечной точке проката");
         }
         return point;
     }
 
     private void validateSerialNumberUniqueness(String serialNumber) {
-        if (scooterRepository.findBySerialNumber(serialNumber).isPresent()) {
+        Optional<Scooter> existingScooter = scooterRepository.findBySerialNumber(serialNumber);
+        if (existingScooter.isPresent()) {
             throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
         }
     }
@@ -116,7 +119,8 @@ public class ScooterServiceImpl implements ScooterService {
     @Transactional(readOnly = true)
     public ScooterResponseDto getScooterDtoBySerialNumber(String serialNumber) {
         Scooter scooter = scooterRepository.findBySerialNumber(serialNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Самокат с серийным номером " + serialNumber + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Самокат с серийным номером " + serialNumber + " не найден"));
         return scooterMapper.toDto(scooter);
     }
 

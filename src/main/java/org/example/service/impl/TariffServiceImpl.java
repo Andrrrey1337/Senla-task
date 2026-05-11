@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -31,13 +32,16 @@ public class TariffServiceImpl implements TariffService {
 
     public TariffResponseDto createTariff(TariffCreateDto dto) {
         Tariff tariff = tariffMapper.toEntity(dto);
-        if (tariffRepository.findByName(tariff.getName()).isPresent()) {
-            throw new BusinessException("Тариф с названием '" + tariff.getName() + "' уже существует");
+        String name = tariff.getName();
+        
+        Optional<Tariff> existingTariff = tariffRepository.findByName(name);
+        if (existingTariff.isPresent()) {
+            throw new BusinessException("Тариф с названием '" + name + "' уже существует");
         }
         tariff = tariffRepository.create(tariff);
 
         log.info("Успешно создан новый тариф: ID={}, название='{}', цена={}",
-                tariff.getId(), tariff.getName(), tariff.getPrice());
+                tariff.getId(), name, tariff.getPrice());
 
         return tariffMapper.toDto(tariff);
     }
@@ -70,12 +74,15 @@ public class TariffServiceImpl implements TariffService {
 
     public TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto) {
         Tariff existTariff = findTariffById(id);
+        String name = tariffDto.getName();
+        String existingName = existTariff.getName();
 
-        if (isNotBlank(tariffDto.getName()) && notEqual(tariffDto.getName(), existTariff.getName())) {
-            log.info("Обновление названия тарифа с '{}' на '{}'", existTariff.getName(), tariffDto.getName());
-            if (tariffRepository.findByName(tariffDto.getName()).isPresent()) {
-                throw new BusinessException("Тариф с названием '" + tariffDto.getName() + "' уже существует");
+        if (isNotBlank(name) && notEqual(name, existingName)) {
+            Optional<Tariff> existingTariff = tariffRepository.findByName(name);
+            if (existingTariff.isPresent()) {
+                throw new BusinessException("Тариф с названием '" + name + "' уже существует");
             }
+            log.info("Обновление названия тарифа с '{}' на '{}'", existingName, name);
         } else {
             log.info("Название тарифа не предоставлено или не изменилось, пропуск валидации имени");
         }

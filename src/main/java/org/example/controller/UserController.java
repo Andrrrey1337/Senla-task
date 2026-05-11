@@ -79,7 +79,9 @@ public class UserController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить права и статус пользователя (админ)", description = "Изменение роли или блокировка пользователя.")
-    public ResponseEntity<UserResponseDto> updateAdminFields(@PathVariable Long id,@Valid @RequestBody UserAdminUpdateDto  userAdminUpdateDto) {
+    public ResponseEntity<UserResponseDto> updateAdminFields(
+            @PathVariable Long id,
+            @Valid @RequestBody UserAdminUpdateDto userAdminUpdateDto) {
         UserResponseDto user = userService.updateAdminFields(id,userAdminUpdateDto);
         return ResponseEntity.ok(user);
     }

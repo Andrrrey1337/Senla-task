@@ -16,6 +16,7 @@ import org.example.repository.UserSubscriptionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +34,9 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     public UserSubscriptionResponseDto buySubscription(Long userId, Long subscriptionId) {
         User user = userService.findEntityById(userId);
         Subscription subscription = subscriptionService.findSubscriptionById(subscriptionId);
-        validateSubscriptionPurchaseAvailability(userId);
-        validateUserBalanceForPurchase(user, subscription);
-        withdrawSubscriptionPriceFromUserBalance(user, subscription);
+
+        validateSubscriptionPurchaseAvailability(userId); // проверка наличия абонемента
+        chargeForSubscription(user, subscription); // списывание средств
 
         UserSubscription userSubscription = buildUserSubscription(user, subscription);
         userSubscription = userSubscriptionRepository.create(userSubscription);
@@ -72,14 +73,13 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         }
     }
 
-    private void validateUserBalanceForPurchase(User user, Subscription subscription) {
+    private void chargeForSubscription(User user, Subscription subscription) {
         if (user.getBalance().compareTo(subscription.getPrice()) < 0) {
             throw new BusinessException("Недостаточно средств для покупки абонемента. Пополните баланс.");
         }
-    }
 
-    private void withdrawSubscriptionPriceFromUserBalance(User user, Subscription subscription) {
-        user.setBalance(user.getBalance().subtract(subscription.getPrice()));
+        BigDecimal newBalance = user.getBalance().subtract(subscription.getPrice());
+        user.setBalance(newBalance);
         userService.update(user);
     }
 

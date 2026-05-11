@@ -39,7 +39,8 @@ public class RentalPointController {
     @PostMapping("/batch")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать несколько точек проката", description = "Пакетное добавление новых точек")
-    public ResponseEntity<List<RentalPointResponseDto>> createRentalPointsBatch(@Valid @RequestBody List<RentalPointCreateDto> dtos) {
+    public ResponseEntity<List<RentalPointResponseDto>> createRentalPointsBatch(
+            @Valid @RequestBody List<RentalPointCreateDto> dtos) {
         List<RentalPointResponseDto> rentalPoints = rentalPointService.createRentalPointsBatch(dtos);
         return new ResponseEntity<>(rentalPoints, HttpStatus.CREATED);
     }
@@ -68,7 +69,9 @@ public class RentalPointController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить данные точки проката", description = "Частичное обновление полей")
-    public ResponseEntity<RentalPointResponseDto> updateRentalPoint(@PathVariable Long id, @Valid @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
+    public ResponseEntity<RentalPointResponseDto> updateRentalPoint(
+            @PathVariable Long id, 
+            @Valid @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
         RentalPointResponseDto rentalPoint = rentalPointService.updateRentalPoint(id, rentalPointUpdateDto);
         return ResponseEntity.ok(rentalPoint);
     }
