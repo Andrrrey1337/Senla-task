@@ -73,9 +73,9 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     @Transactional(readOnly = true)
     public int getAddressLevel(RentalPoint point) {
-        boolean hasCity = isBlank(point.getCity());
-        boolean hasStreet = isBlank(point.getStreet());
-        boolean hasHouse = isBlank(point.getHouseNumber());
+        boolean hasCity = isNotBlank(point.getCity());
+        boolean hasStreet = isNotBlank(point.getStreet());
+        boolean hasHouse = isNotBlank(point.getHouseNumber());
 
         if (hasHouse) return (hasCity && hasStreet) ? 3 : -1;
         if (hasStreet) return hasCity ? 2 : -1;

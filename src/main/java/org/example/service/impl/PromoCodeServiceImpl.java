@@ -43,15 +43,6 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         return promoCodeMapper.toDto(promoCodeRepository.create(promoCode));
     }
 
-    public PromoCode findEntityById(Long id){
-        PromoCode promoCode = promoCodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
-
-        log.info("Успешно найден промокод с ID: {}", id);
-
-        return promoCode;
-    }
-
     @Transactional(readOnly = true)
     public PromoCode findByCode(String code) {
         return promoCodeRepository.findByCode(code)
@@ -93,6 +84,15 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         log.info("Данные промокода с ID {} успешно обновлены", id);
 
         return promoCodeMapper.toDto(promoCode);
+    }
+
+    private PromoCode findEntityById(Long id){
+        PromoCode promoCode = promoCodeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
+
+        log.info("Успешно найден промокод с ID: {}", id);
+
+        return promoCode;
     }
 }
 
