@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dto.scooter.ScooterResponseDto;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointDataDto;
